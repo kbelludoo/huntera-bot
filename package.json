@@ -1,0 +1,27 @@
+{
+  "name": "huntera-cli",
+  "version": "2.2.0",
+  "description": "Huntera MMORPG Headless Bot — Modo Terminal para VPS Free (1 CPU / 1 GB RAM)",
+  "main": "src/index.js",
+  "type": "commonjs",
+  "scripts": {
+    "start": "node src/index.js",
+    "term": "node src/term/main.js",
+    "status": "node src/index.js --status",
+    "login": "node src/index.js --gui"
+  },
+  "keywords": [
+    "huntera",
+    "bot",
+    "headless",
+    "cli",
+    "terminal",
+    "vps"
+  ],
+  "author": "",
+  "license": "ISC",
+  "dependencies": {
+    "puppeteer": "^23.4.0",
+    "ws": "^8.22.0"
+  }
+}

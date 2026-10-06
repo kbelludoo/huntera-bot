@@ -1,0 +1,20 @@
+# Dependências e caches
+node_modules/
+package-lock.json
+
+# Dados e Telemetria em tempo real
+data/
+*.log
+dump-*.json
+
+# SEGURANÇA CRÍTICA: Senhas e credenciais reais nunca vão para o Git
+accounts.json
+session.json
+config.json
+.env
+
+# Arquivos de sistema e chaves
+*.key
+*.pem
+.DS_Store
+Thumbs.db

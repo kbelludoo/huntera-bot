@@ -1,0 +1,20 @@
+[
+  {
+    "id": "acc1",
+    "name": "Conta 1",
+    "email": "seu-email-1@gmail.com",
+    "password": "sua-senha-aqui",
+    "characterName": "SeuPersonagem1",
+    "huntId": "rat-hunt",
+    "tier": 0
+  },
+  {
+    "id": "acc2",
+    "name": "Conta 2",
+    "email": "seu-email-2@gmail.com",
+    "password": "sua-senha-aqui",
+    "characterName": "SeuPersonagem2",
+    "huntId": "rat-hunt",
+    "tier": 0
+  }
+]

@@ -1,0 +1,22 @@
+[Unit]
+Description=Huntera Headless Bot — Modo Terminal VPS
+After=network.target
+
+[Service]
+Type=simple
+User=ubuntu
+WorkingDirectory=/home/ubuntu/huntera-cli
+ExecStart=/usr/bin/npm start
+Restart=always
+RestartSec=10
+Environment=NODE_ENV=production
+
+# Limites de segurança para VPS Free 1 vCPU / 1 GB RAM
+MemoryMax=450M
+CPUQuota=85%
+
+StandardOutput=journal
+StandardError=journal
+
+[Install]
+WantedBy=multi-user.target
