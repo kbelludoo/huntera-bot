@@ -1,0 +1,694 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Huntera Multi-Bot — Painel de Controle</title>
+  <link rel="icon" href="data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100'><text y='.9em' font-size='90'>⚔️</text></svg>">
+  <style>
+    :root {
+      --bg: #0b0e14;
+      --card-bg: #151a24;
+      --card-border: #232a3b;
+      --accent: #3b82f6;
+      --accent-glow: rgba(59, 130, 246, 0.2);
+      --green: #10b981;
+      --green-glow: rgba(16, 185, 129, 0.25);
+      --cyan: #06b6d4;
+      --yellow: #f59e0b;
+      --purple: #8b5cf6;
+      --red: #ef4444;
+      --text: #f3f4f6;
+      --text-muted: #9ca3af;
+      --font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Helvetica, Arial, sans-serif;
+    }
+
+    * { box-sizing: border-box; margin: 0; padding: 0; }
+    body {
+      background-color: var(--bg);
+      color: var(--text);
+      font-family: var(--font-family);
+      line-height: 1.5;
+      padding: 16px;
+      min-height: 100vh;
+    }
+
+    header {
+      max-width: 1300px;
+      margin: 0 auto 20px auto;
+      display: flex;
+      flex-wrap: wrap;
+      justify-content: space-between;
+      align-items: center;
+      gap: 16px;
+      padding: 16px 20px;
+      background: var(--card-bg);
+      border: 1px solid var(--card-border);
+      border-radius: 12px;
+      box-shadow: 0 4px 20px rgba(0,0,0,0.3);
+    }
+
+    .brand {
+      display: flex;
+      align-items: center;
+      gap: 12px;
+    }
+    .brand h1 {
+      font-size: 1.25rem;
+      font-weight: 700;
+      color: #fff;
+      display: flex;
+      align-items: center;
+      gap: 8px;
+    }
+    .badge {
+      display: inline-flex;
+      align-items: center;
+      padding: 2px 8px;
+      border-radius: 9999px;
+      font-size: 0.75rem;
+      font-weight: 600;
+      text-transform: uppercase;
+      letter-spacing: 0.05em;
+    }
+    .badge-green { background: rgba(16, 185, 129, 0.15); color: var(--green); border: 1px solid rgba(16, 185, 129, 0.3); }
+    .badge-yellow { background: rgba(245, 158, 11, 0.15); color: var(--yellow); border: 1px solid rgba(245, 158, 11, 0.3); }
+    .badge-purple { background: rgba(139, 92, 246, 0.15); color: var(--purple); border: 1px solid rgba(139, 92, 246, 0.3); }
+    .badge-red { background: rgba(239, 68, 68, 0.15); color: var(--red); border: 1px solid rgba(239, 68, 68, 0.3); }
+
+    .pulse-yellow { background: var(--yellow); box-shadow: 0 0 10px var(--yellow); }
+    .pulse-red    { background: var(--red);    box-shadow: 0 0 10px var(--red); animation: none; }
+
+    .pulse {
+      display: inline-block;
+      width: 8px;
+      height: 8px;
+      border-radius: 50%;
+      background: var(--green);
+      box-shadow: 0 0 10px var(--green);
+      animation: pulse 1.5s infinite;
+      margin-right: 6px;
+    }
+    @keyframes pulse {
+      0%, 100% { opacity: 1; transform: scale(1); }
+      50% { opacity: 0.4; transform: scale(0.8); }
+    }
+
+    .endpoint-box {
+      display: flex;
+      align-items: center;
+      gap: 8px;
+      background: rgba(0,0,0,0.25);
+      padding: 6px 12px;
+      border-radius: 8px;
+      border: 1px solid var(--card-border);
+      font-size: 0.85rem;
+    }
+    .endpoint-box input {
+      background: transparent;
+      border: none;
+      color: #fff;
+      font-size: 0.85rem;
+      outline: none;
+      width: 220px;
+    }
+    .btn {
+      background: var(--accent);
+      color: #fff;
+      border: none;
+      padding: 4px 10px;
+      border-radius: 6px;
+      font-size: 0.8rem;
+      font-weight: 600;
+      cursor: pointer;
+      transition: background 0.2s;
+    }
+    .btn:hover { background: #2563eb; }
+
+    /* Grid de Contas */
+    .grid {
+      max-width: 1300px;
+      margin: 0 auto;
+      display: grid;
+      grid-template-columns: repeat(auto-fit, minmax(300px, 1fr));
+      gap: 20px;
+    }
+
+    .card {
+      background: var(--card-bg);
+      border: 1px solid var(--card-border);
+      border-radius: 12px;
+      padding: 18px;
+      display: flex;
+      flex-direction: column;
+      gap: 14px;
+      position: relative;
+      overflow: hidden;
+      box-shadow: 0 4px 14px rgba(0,0,0,0.2);
+      transition: transform 0.2s, border-color 0.2s;
+    }
+    .card:hover {
+      transform: translateY(-2px);
+      border-color: rgba(59, 130, 246, 0.4);
+    }
+    .card-header {
+      display: flex;
+      justify-content: space-between;
+      align-items: flex-start;
+      border-bottom: 1px solid rgba(255,255,255,0.06);
+      padding-bottom: 12px;
+    }
+    .char-info h2 {
+      font-size: 1.15rem;
+      font-weight: 700;
+      color: #fff;
+    }
+    .char-level {
+      color: var(--yellow);
+      font-size: 0.85rem;
+      font-weight: 600;
+    }
+
+    /* Barras de HP e Mana */
+    .bar-group {
+      display: flex;
+      flex-direction: column;
+      gap: 8px;
+    }
+    .bar-row {
+      display: flex;
+      flex-direction: column;
+      gap: 3px;
+    }
+    .bar-label {
+      display: flex;
+      justify-content: space-between;
+      font-size: 0.75rem;
+      color: var(--text-muted);
+      font-weight: 600;
+    }
+    .progress-track {
+      background: #0f131a;
+      height: 10px;
+      border-radius: 6px;
+      overflow: hidden;
+      position: relative;
+    }
+    .progress-fill {
+      height: 100%;
+      border-radius: 6px;
+      transition: width 0.4s ease;
+    }
+    .fill-hp { background: linear-gradient(90deg, #059669, #10b981); box-shadow: 0 0 8px var(--green-glow); }
+    .fill-mana { background: linear-gradient(90deg, #0891b2, #06b6d4); }
+    .fill-bestiary { background: linear-gradient(90deg, #7c3aed, #a855f7); }
+    .fill-xp { background: linear-gradient(90deg, #d97706, #f59e0b); }
+
+    /* Painel de Resumo Global */
+    .summary-panel {
+      max-width: 1300px;
+      margin: 0 auto 20px auto;
+      display: grid;
+      grid-template-columns: repeat(auto-fit, minmax(220px, 1fr));
+      gap: 14px;
+    }
+    .summary-stat {
+      background: var(--card-bg);
+      border: 1px solid var(--card-border);
+      border-radius: 10px;
+      padding: 14px 18px;
+      display: flex;
+      flex-direction: column;
+      gap: 4px;
+      box-shadow: 0 4px 14px rgba(0,0,0,0.2);
+    }
+    .summary-stat-label {
+      font-size: 0.75rem;
+      text-transform: uppercase;
+      letter-spacing: 0.05em;
+      color: var(--text-muted);
+      font-weight: 600;
+    }
+    .summary-stat-val {
+      font-size: 1.35rem;
+      font-weight: 700;
+      color: #fff;
+      display: flex;
+      align-items: baseline;
+      gap: 6px;
+    }
+    .summary-stat-sub {
+      font-size: 0.8rem;
+      color: var(--text-muted);
+      font-weight: normal;
+    }
+
+    /* Caixa de Ouro Individual */
+    .gold-box {
+      background: rgba(245, 158, 11, 0.08);
+      border: 1px solid rgba(245, 158, 11, 0.25);
+      border-radius: 8px;
+      padding: 10px 14px;
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+    }
+    .gold-box-left {
+      display: flex;
+      flex-direction: column;
+    }
+    .gold-box-label {
+      font-size: 0.7rem;
+      text-transform: uppercase;
+      letter-spacing: 0.05em;
+      color: var(--yellow);
+      font-weight: 700;
+    }
+    .gold-box-sub {
+      font-size: 0.72rem;
+      color: var(--text-muted);
+    }
+    .gold-box-amount {
+      font-size: 1.15rem;
+      font-weight: 700;
+      color: #fef08a;
+    }
+
+    /* Stamina & Hunt Info */
+    .stats-box {
+      background: rgba(0, 0, 0, 0.2);
+      border-radius: 8px;
+      padding: 12px;
+      display: grid;
+      grid-template-columns: 1fr 1fr;
+      gap: 10px;
+      font-size: 0.82rem;
+    }
+    .stat-item {
+      display: flex;
+      flex-direction: column;
+    }
+    .stat-title {
+      font-size: 0.7rem;
+      text-transform: uppercase;
+      letter-spacing: 0.05em;
+      color: var(--text-muted);
+    }
+    .stat-value {
+      font-weight: 600;
+      color: #fff;
+      display: flex;
+      align-items: center;
+      gap: 4px;
+    }
+
+    /* Caixa de Bestiário */
+    .bestiary-box {
+      background: rgba(139, 92, 246, 0.06);
+      border: 1px solid rgba(139, 92, 246, 0.2);
+      border-radius: 8px;
+      padding: 12px;
+      display: flex;
+      flex-direction: column;
+      gap: 6px;
+    }
+    .bestiary-header {
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      font-size: 0.82rem;
+      font-weight: 700;
+      color: #c4b5fd;
+    }
+
+    .zero-waste-tag {
+      font-size: 0.7rem;
+      color: var(--green);
+      background: rgba(16, 185, 129, 0.08);
+      padding: 4px 8px;
+      border-radius: 4px;
+      border: 1px dashed rgba(16, 185, 129, 0.3);
+      text-align: center;
+    }
+
+    footer {
+      max-width: 1300px;
+      margin: 30px auto 10px auto;
+      text-align: center;
+      color: var(--text-muted);
+      font-size: 0.8rem;
+    }
+
+    .offline-placeholder {
+      grid-column: 1 / -1;
+      text-align: center;
+      padding: 60px 20px;
+      background: var(--card-bg);
+      border: 1px dashed var(--card-border);
+      border-radius: 12px;
+    }
+  </style>
+</head>
+<body>
+
+  <header>
+    <div class="brand">
+      <h1>⚔️ Huntera Multi-Bot</h1>
+      <span class="badge badge-yellow" id="vpsBadge"><span class="pulse pulse-yellow" id="vpsPulse"></span><span id="vpsBadgeText">CONECTANDO…</span></span>
+    </div>
+
+    <div class="endpoint-box">
+      <span>📡 API:</span>
+      <input type="text" id="apiInput" placeholder="http://129.153.157.17:3000">
+      <button class="btn" onclick="saveEndpoint()">Salvar</button>
+    </div>
+  </header>
+
+  <!-- Resumo Global de Todas as Contas -->
+  <div class="summary-panel" id="summaryPanel" style="display: none;">
+    <div class="summary-stat">
+      <span class="summary-stat-label">💰 Ouro Total (4 Contas)</span>
+      <span class="summary-stat-val" id="sumGoldVal" style="color: #fef08a;">0 gp</span>
+      <span class="summary-stat-sub" id="sumGoldSub">0 gp mochila</span>
+    </div>
+    <div class="summary-stat">
+      <span class="summary-stat-label">⭐ Bônus Médio Bestiário</span>
+      <span class="summary-stat-val" id="sumBonusVal" style="color: #c4b5fd;">+0% XP</span>
+      <span class="summary-stat-sub">Multiplicador permanente</span>
+    </div>
+    <div class="summary-stat">
+      <span class="summary-stat-label">💀 Kills Totais Bestiário</span>
+      <span class="summary-stat-val" id="sumKillsVal">0</span>
+      <span class="summary-stat-sub" id="sumCompletedVal">0 concluídos</span>
+    </div>
+    <div class="summary-stat">
+      <span class="summary-stat-label">⚡ Status Operacional</span>
+      <span class="summary-stat-val" id="sumActiveVal" style="color: var(--green);">0 / 4</span>
+      <span class="summary-stat-sub">100% Zero-Waste</span>
+    </div>
+  </div>
+
+  <main class="grid" id="accountsGrid">
+    <div class="offline-placeholder">
+      <h3>Carregando telemetria das contas…</h3>
+      <p style="color: var(--text-muted); margin-top: 8px;">Conectando à API do bot na VPS…</p>
+    </div>
+  </main>
+
+  <footer>
+    <p>Huntera Terminal Bot · 4 Contas Concorrentes · Foco 100% em Bestiário e Zero-Waste (1 vCPU / 1 GB RAM)</p>
+  </footer>
+
+  <script>
+    'use strict';
+
+    // ── Config ──────────────────────────────────────────────
+    const FETCH_TIMEOUT_MS = 6000;   // aborta fetch travado
+    const POLL_MS = 2500;
+    const BADGE = document.getElementById('vpsBadge');
+    const BADGE_TEXT = document.getElementById('vpsBadgeText');
+    const BADGE_PULSE = document.getElementById('vpsPulse');
+
+    const defaultApi = (window.location.hostname === 'localhost' || window.location.hostname === '129.153.157.17')
+      ? window.location.origin
+      : 'https://ron-flexible-respective-caring.trycloudflare.com';
+
+    // Lembra a última API que FUNCIONOU (cai nela se a salva falhar)
+    let currentApi = localStorage.getItem('huntera_api') || localStorage.getItem('huntera_api_ok') || defaultApi;
+    const apiInput = document.getElementById('apiInput');
+    apiInput.value = currentApi;
+
+    // ── XSS: escapa qualquer string vinda da API ────────────
+    function esc(v) {
+      return String(v ?? '')
+        .replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;')
+        .replace(/"/g, '&quot;').replace(/'/g, '&#39;');
+    }
+
+    // ── Badge de status no header ───────────────────────────
+    function setVpsState(state, label) {
+      const colors = { online: 'green', offline: 'red', partial: 'yellow', connecting: 'yellow' };
+      const c = colors[state] || 'yellow';
+      BADGE.className = 'badge badge-' + c;
+      BADGE_PULSE.className = 'pulse' + (c === 'green' ? '' : ' pulse-' + c);
+      BADGE_TEXT.textContent = label;
+    }
+
+    function saveEndpoint() {
+      const val = apiInput.value.trim().replace(/\/+$/, '');
+      if (!val) return;
+      // Mixed Content: página HTTPS não consegue chamar API HTTP
+      if (window.location.protocol === 'https:' && val.startsWith('http://')) {
+        alert('\u26a0\ufe0f A página é HTTPS e essa API é HTTP. O navegador vai BLOQUEAR a conexão (Mixed Content).\nUse uma URL HTTPS (ex.: tunnel Cloudflare).');
+        return;
+      }
+      localStorage.setItem('huntera_api', val);
+      currentApi = val;
+      fetchStatus();
+    }
+
+    // Enter no input também salva
+    apiInput.addEventListener('keydown', (e) => { if (e.key === 'Enter') saveEndpoint(); });
+
+    function formatTime(ms) {
+      if (!ms || ms <= 0) return '00:00:00';
+      const totalSecs = Math.floor(ms / 1000);
+      const h = String(Math.floor(totalSecs / 3600)).padStart(2, '0');
+      const m = String(Math.floor((totalSecs % 3600) / 60)).padStart(2, '0');
+      const s = String(totalSecs % 60).padStart(2, '0');
+      return h + ':' + m + ':' + s;
+    }
+
+    function formatStamina(ms) {
+      if (!ms || ms <= 0) return '—';
+      const totalMins = Math.floor(ms / 60000);
+      const h = Math.floor(totalMins / 60);
+      const m = totalMins % 60;
+      return h + 'h ' + String(m).padStart(2, '0') + 'm';
+    }
+
+    function formatGp(n) {
+      if (typeof n !== 'number' || !isFinite(n)) return '0 gp';
+      const a = Math.abs(n);
+      if (a < 1000) return Math.round(n) + ' gp';
+      if (a < 1e6) return (n / 1e3).toFixed(1) + 'k gp';
+      return (n / 1e6).toFixed(2) + 'kk gp';
+    }
+
+    function clock() { return new Date().toLocaleTimeString('pt-BR'); }
+
+    let firstLoadDone = false;
+
+    function showOffline(detail) {
+      setVpsState('offline', 'API OFFLINE');
+      const grid = document.getElementById('accountsGrid');
+      // Se já tem cards renderizados, mantém e só atualiza o badge (falha transitória)
+      if (firstLoadDone && grid.querySelector('.card')) return;
+      grid.innerHTML =
+        '<div class="offline-placeholder">' +
+          '<h3 style="color: var(--red);">\ud83d\udd34 API offline</h3>' +
+          '<p style="color: var(--text-muted); margin-top: 8px;">' + esc(detail) + '</p>' +
+          '<p style="color: var(--text-muted); margin-top: 4px; font-size: 0.78rem;">Última tentativa: ' + clock() + ' · tentando novamente a cada 2,5s</p>' +
+        '</div>';
+    }
+
+    async function fetchStatus() {
+      const controller = new AbortController();
+      const timer = setTimeout(() => controller.abort(), FETCH_TIMEOUT_MS);
+      try {
+        const url = currentApi.replace(/\/+$/, '') + '/api/status';
+        const res = await fetch(url, { cache: 'no-store', signal: controller.signal });
+        if (!res.ok) throw new Error('HTTP ' + res.status);
+        const data = await res.json();
+        clearTimeout(timer);
+        firstLoadDone = true;
+        // API respondeu → grava como última conhecida boa
+        if (localStorage.getItem('huntera_api_ok') !== currentApi) {
+          localStorage.setItem('huntera_api_ok', currentApi);
+        }
+        renderAccounts(data.accounts || []);
+      } catch (err) {
+        clearTimeout(timer);
+        const reason = err.name === 'AbortError'
+          ? 'Sem resposta em 6s (timeout) — verifique se o bot está rodando na VPS.'
+          : (window.location.protocol === 'https:' && currentApi.startsWith('http://'))
+            ? 'Bloqueado pelo navegador: página HTTPS chamando API HTTP (Mixed Content). Use uma URL HTTPS.'
+            : 'Falha de conexão com ' + currentApi + ' — o bot/tunnel pode estar fora.';
+        showOffline(reason);
+      }
+    }
+
+    function renderAccounts(accounts) {
+      const grid = document.getElementById('accountsGrid');
+      if (!accounts || accounts.length === 0) {
+        setVpsState('partial', 'AGUARDANDO TELEMETRIA');
+        grid.innerHTML =
+          '<div class="offline-placeholder">' +
+            '<h3 style="color: var(--yellow);">Aguardando telemetria…</h3>' +
+            '<p style="color: var(--text-muted); margin-top: 8px;">API respondeu, mas nenhuma conta reportou status ainda. Verifique se o bot está rodando na VPS.</p>' +
+          '</div>';
+        return;
+      }
+
+      const inGameCount = accounts.filter(a => a.inGame).length;
+      setVpsState(inGameCount ? 'online' : 'partial',
+        inGameCount ? inGameCount + '/' + accounts.length + ' EM JOGO' : 'API ONLINE');
+
+      // Calcular estatísticas globais das 4 contas
+      let totalGold = 0;
+      let totalKills = 0;
+      let totalBonus = 0;
+      let totalCompleted = 0;
+
+      accounts.forEach(acc => {
+        totalGold += (Number(acc.gold) || 0);
+        const b = acc.bestiary || {};
+        totalBonus += (Number(b.bonusPercent) || 0);
+        totalCompleted += (Number(b.completedMonsters) || 0);
+        const charKills = b.totalKills || (b.byMonster ? Object.values(b.byMonster).reduce((sum, v) => sum + (Number(v) || 0), 0) : 0);
+        totalKills += charKills;
+      });
+
+      const avgBonus = accounts.length ? (totalBonus / accounts.length).toFixed(1) : '0';
+      const summaryEl = document.getElementById('summaryPanel');
+      if (summaryEl) {
+        summaryEl.style.display = 'grid';
+        document.getElementById('sumGoldVal').textContent = formatGp(totalGold);
+        document.getElementById('sumGoldSub').textContent = totalGold.toLocaleString('pt-BR') + ' gp somados';
+        document.getElementById('sumBonusVal').textContent = '+' + avgBonus + '% XP';
+        document.getElementById('sumKillsVal').textContent = totalKills.toLocaleString('pt-BR');
+        document.getElementById('sumCompletedVal').textContent = totalCompleted + ' monstros 100%';
+        document.getElementById('sumActiveVal').textContent = inGameCount + ' / ' + accounts.length + ' Em Jogo';
+      }
+
+      grid.innerHTML = accounts.map((acc, index) => {
+        const hpPct = acc.maxHp ? Math.max(0, Math.min(100, Math.round((acc.hp / acc.maxHp) * 100))) : 0;
+        const manaPct = acc.maxMana ? Math.max(0, Math.min(100, Math.round((acc.mana / acc.maxMana) * 100))) : 0;
+
+        const xp = Number(acc.experience) || 0;
+        const xpNeeded = Number(acc.experienceNeeded) || 0;
+        const xpPct = xpNeeded > 0 ? Math.min(100, Math.round(xp * 100 / xpNeeded)) : 0;
+
+        const bestiary = acc.bestiary || {};
+        const bKills = bestiary.kills || 0;
+        const bReq = bestiary.required || 2500;
+        const bPct = bReq > 0 ? Math.min(100, Math.round((bKills / bReq) * 100)) : 0;
+        const bBonus = bestiary.bonusPercent || 0;
+        const bComp = bestiary.completedMonsters || 0;
+        const bTotal = bestiary.totalMonsters || 164;
+        const charKills = bestiary.totalKills || (bestiary.byMonster ? Object.values(bestiary.byMonster).reduce((sum, v) => sum + (Number(v) || 0), 0) : 0);
+
+        const huntName = acc.hunt ? esc(acc.hunt.huntId) + ' (tier ' + esc(acc.hunt.tier || 0) + ')' : 'Aguardando início';
+        const sessionRemaining = acc.sessionRemainingMs ? formatTime(acc.sessionRemainingMs) : 'Ilimitada (VIP)';
+
+        return `
+          <div class="card">
+            <div class="card-header">
+              <div class="char-info">
+                <h2>${esc(acc.charName || 'Conta ' + (index + 1))}</h2>
+                <span class="char-level">Nível ${esc(acc.level ?? '—')}</span>
+              </div>
+              <span class="badge ${acc.inGame ? 'badge-green' : 'badge-yellow'}">
+                ${acc.inGame ? 'EM JOGO' : 'CONECTANDO'}
+              </span>
+            </div>
+
+            <!-- Ouro Mochila -->
+            <div class="gold-box">
+              <div class="gold-box-left">
+                <span class="gold-box-label">💰 Ouro Total (Mochila)</span>
+                <span class="gold-box-sub">${Number(acc.gold || 0).toLocaleString('pt-BR')} gp</span>
+              </div>
+              <div class="gold-box-amount">${formatGp(acc.gold)}</div>
+            </div>
+
+            <!-- Vitals & XP -->
+            <div class="bar-group">
+              <div class="bar-row">
+                <div class="bar-label">
+                  <span>HP</span>
+                  <span>${acc.hp ?? '—'} / ${acc.maxHp ?? '—'} (${hpPct}%)</span>
+                </div>
+                <div class="progress-track">
+                  <div class="progress-fill fill-hp" style="width: ${hpPct}%;"></div>
+                </div>
+              </div>
+
+              <div class="bar-row">
+                <div class="bar-label">
+                  <span>MANA</span>
+                  <span>${acc.mana ?? '—'} / ${acc.maxMana ?? '—'} (${manaPct}%)</span>
+                </div>
+                <div class="progress-track">
+                  <div class="progress-fill fill-mana" style="width: ${manaPct}%;"></div>
+                </div>
+              </div>
+
+              ${xpNeeded > 0 ? `
+              <div class="bar-row">
+                <div class="bar-label">
+                  <span style="color: var(--yellow);">XP NÍVEL</span>
+                  <span>${xp.toLocaleString('pt-BR')} / ${xpNeeded.toLocaleString('pt-BR')} (${xpPct}%)</span>
+                </div>
+                <div class="progress-track">
+                  <div class="progress-fill fill-xp" style="width: ${xpPct}%;"></div>
+                </div>
+              </div>
+              ` : ''}
+            </div>
+
+            <!-- Bestiário -->
+            <div class="bestiary-box">
+              <div class="bestiary-header">
+                <span>🎯 Bestiário: ${esc(bestiary.currentMonster || 'Rat')}</span>
+                <span class="badge badge-purple">⭐ +${bBonus}% XP</span>
+              </div>
+              <div class="progress-track" style="height: 8px;">
+                <div class="progress-fill fill-bestiary" style="width: ${bPct}%;"></div>
+              </div>
+              <div style="display: flex; justify-content: space-between; font-size: 0.72rem; color: #a78bfa;">
+                <span>Monstro: ${bKills} / ${bReq} (${bPct}%)</span>
+                <span>🏆 ${bComp}/${bTotal} concluídos</span>
+              </div>
+              <div style="font-size: 0.72rem; color: #c4b5fd; text-align: right;">
+                Kills no bestiário: <strong>${charKills.toLocaleString('pt-BR')}</strong>
+              </div>
+            </div>
+
+            <!-- Stamina & Hunt -->
+            <div class="stats-box">
+              <div class="stat-item">
+                <span class="stat-title">Stamina Total</span>
+                <span class="stat-value">⏳ ${formatStamina(acc.staminaMs)}</span>
+              </div>
+              <div class="stat-item">
+                <span class="stat-title">Sessão Caça</span>
+                <span class="stat-value">🕒 ${sessionRemaining}</span>
+              </div>
+              <div class="stat-item">
+                <span class="stat-title">Hunt Atual</span>
+                <span class="stat-value" style="color: var(--cyan);">${huntName}</span>
+              </div>
+              <div class="stat-item">
+                <span class="stat-title">Refills Disp.</span>
+                <span class="stat-value">${acc.staminaRefillsLeft ?? 6} / 6</span>
+              </div>
+            </div>
+
+            <div class="zero-waste-tag">
+              🌱 100% Zero-Waste (0 poções compradas / Farm contínuo)
+            </div>
+          </div>
+        `;
+      }).join('');
+    }
+
+    // ── Polling: pausa quando a aba está oculta ─────────────
+    fetchStatus();
+    setInterval(() => { if (document.visibilityState === 'visible') fetchStatus(); }, POLL_MS);
+    document.addEventListener('visibilitychange', () => {
+      if (document.visibilityState === 'visible') fetchStatus();
+    });
+  </script>
+</body>
+</html>
