@@ -111,6 +111,8 @@ const state = {
   retreating: false,
   lootCount: 0,
   analyzer: { kills: 0, experience: 0, lootValue: 0, waste: 0 },
+  myPlayerId: null,
+  itemValues: {},
   lootsTaken: 0,
   huntsStarted: 0,
   deaths: 0,
@@ -269,6 +271,28 @@ async function start() {
     huntCatalog = msg;
   });
 
+  // Identidade do próprio personagem (filtra eventos de outros jogadores)
+  socket.on('welcome', (msg) => {
+    if (msg.playerId) state.myPlayerId = msg.playerId;
+  });
+
+  // Catálogo de preços NPC: [[itemId, preco], ...] — usado para valorizar o loot
+  socket.on('item-values', (msg) => {
+    if (Array.isArray(msg.npc)) {
+      for (const pair of msg.npc) {
+        if (Array.isArray(pair) && pair.length >= 2) {
+          state.itemValues[pair[0]] = pair[1];
+        }
+      }
+    }
+  });
+
+  // Saldo real de gold da mochila
+  socket.on('inventory-delta', (msg) => {
+    if (typeof msg.gold === 'number') state.gold = msg.gold;
+    ui.handleEvent('tick', state);
+  });
+
   socket.on('player-stats', (msg) => {
     state.level = msg.level;
     state.hp = msg.health;
@@ -359,8 +383,10 @@ async function start() {
   });
 
   socket.on('experience-gain', (msg) => {
-    if (msg.exp) {
-      state.analyzer.experience = (state.analyzer.experience || 0) + msg.exp;
+    if (state.myPlayerId && msg.playerId && msg.playerId !== state.myPlayerId) return;
+    const gain = Number(msg.value ?? msg.exp ?? 0);
+    if (gain > 0) {
+      state.analyzer.experience = (state.analyzer.experience || 0) + gain;
       state.analyzer.kills = (state.analyzer.kills || 0) + 1;
       ui.handleEvent('tick', state);
     }
@@ -410,16 +436,28 @@ async function start() {
 
   // Coleta de Loot (Zero-Waste: 100% de Lucro)
   function handleLoot(msg) {
-    const items = msg.items || (msg.uid ? [msg] : []);
+    const items = msg.items || (msg.item ? [msg.item] : (msg.uid ? [msg] : []));
     state.lootCount = items.length;
+
+    // Valoriza o loot em tempo real (gold/h) via catálogo NPC
+    let lootGain = 0;
+    for (const it of items) {
+      if (!it) continue;
+      const count = Number(it.count) || 1;
+      const unit = it.itemId === 3031 ? 1 : (state.itemValues[it.itemId] || 0);
+      lootGain += unit * count;
+      state.lootsTaken++;
+    }
+    if (lootGain > 0) {
+      state.analyzer.lootValue = (state.analyzer.lootValue || 0) + lootGain;
+    }
     ui.handleEvent('tick', state);
 
-    if (config.autoLoot && items.length > 0) {
+    if (config.autoLoot && items.length > 0 && !msg.item) {
       items.forEach((it, idx) => {
         if (it?.uid !== undefined) {
           setTimeout(() => {
             socket.takeLoot(it.uid);
-            state.lootsTaken++;
             ui.addLog(`Loot coletado: ${it.name || it.uid} (Zero-Waste 100% Lucro)`, 'ok');
           }, (idx * 300) + Math.floor(Math.random() * 200 + 200));
         }

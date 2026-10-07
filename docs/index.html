@@ -74,6 +74,10 @@
     .badge-green { background: rgba(16, 185, 129, 0.15); color: var(--green); border: 1px solid rgba(16, 185, 129, 0.3); }
     .badge-yellow { background: rgba(245, 158, 11, 0.15); color: var(--yellow); border: 1px solid rgba(245, 158, 11, 0.3); }
     .badge-purple { background: rgba(139, 92, 246, 0.15); color: var(--purple); border: 1px solid rgba(139, 92, 246, 0.3); }
+    .badge-red { background: rgba(239, 68, 68, 0.15); color: var(--red); border: 1px solid rgba(239, 68, 68, 0.3); }
+
+    .pulse-yellow { background: var(--yellow); box-shadow: 0 0 10px var(--yellow); }
+    .pulse-red    { background: var(--red);    box-shadow: 0 0 10px var(--red); animation: none; }
 
     .pulse {
       display: inline-block;
@@ -279,7 +283,7 @@
   <header>
     <div class="brand">
       <h1>⚔️ Huntera Multi-Bot</h1>
-      <span class="badge badge-green"><span class="pulse"></span>VPS 24/7 ONLINE</span>
+      <span class="badge badge-yellow" id="vpsBadge"><span class="pulse pulse-yellow" id="vpsPulse"></span><span id="vpsBadgeText">CONECTANDO…</span></span>
     </div>
 
     <div class="endpoint-box">
@@ -301,22 +305,55 @@
   </footer>
 
   <script>
-    // Recuperar URL da API salva no localStorage ou padrão
-    const defaultApi = (window.location.hostname === 'localhost' || window.location.hostname === '129.153.157.17')
-      ? `${window.location.origin}`
-      : 'http://129.153.157.17:3000';
+    'use strict';
 
-    let currentApi = localStorage.getItem('huntera_api') || defaultApi;
-    document.getElementById('apiInput').value = currentApi;
+    // ── Config ──────────────────────────────────────────────
+    const FETCH_TIMEOUT_MS = 6000;   // aborta fetch travado
+    const POLL_MS = 2500;
+    const BADGE = document.getElementById('vpsBadge');
+    const BADGE_TEXT = document.getElementById('vpsBadgeText');
+    const BADGE_PULSE = document.getElementById('vpsPulse');
+
+    const defaultApi = (window.location.hostname === 'localhost' || window.location.hostname === '129.153.157.17')
+      ? window.location.origin
+      : 'https://ron-flexible-respective-caring.trycloudflare.com';
+
+    // Lembra a última API que FUNCIONOU (cai nela se a salva falhar)
+    let currentApi = localStorage.getItem('huntera_api') || localStorage.getItem('huntera_api_ok') || defaultApi;
+    const apiInput = document.getElementById('apiInput');
+    apiInput.value = currentApi;
+
+    // ── XSS: escapa qualquer string vinda da API ────────────
+    function esc(v) {
+      return String(v ?? '')
+        .replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;')
+        .replace(/"/g, '&quot;').replace(/'/g, '&#39;');
+    }
+
+    // ── Badge de status no header ───────────────────────────
+    function setVpsState(state, label) {
+      const colors = { online: 'green', offline: 'red', partial: 'yellow', connecting: 'yellow' };
+      const c = colors[state] || 'yellow';
+      BADGE.className = 'badge badge-' + c;
+      BADGE_PULSE.className = 'pulse' + (c === 'green' ? '' : ' pulse-' + c);
+      BADGE_TEXT.textContent = label;
+    }
 
     function saveEndpoint() {
-      const val = document.getElementById('apiInput').value.trim();
-      if (val) {
-        localStorage.setItem('huntera_api', val);
-        currentApi = val;
-        fetchStatus();
+      const val = apiInput.value.trim().replace(/\/+$/, '');
+      if (!val) return;
+      // Mixed Content: página HTTPS não consegue chamar API HTTP
+      if (window.location.protocol === 'https:' && val.startsWith('http://')) {
+        alert('\u26a0\ufe0f A página é HTTPS e essa API é HTTP. O navegador vai BLOQUEAR a conexão (Mixed Content).\nUse uma URL HTTPS (ex.: tunnel Cloudflare).');
+        return;
       }
+      localStorage.setItem('huntera_api', val);
+      currentApi = val;
+      fetchStatus();
     }
+
+    // Enter no input também salva
+    apiInput.addEventListener('keydown', (e) => { if (e.key === 'Enter') saveEndpoint(); });
 
     function formatTime(ms) {
       if (!ms || ms <= 0) return '00:00:00';
@@ -324,7 +361,7 @@
       const h = String(Math.floor(totalSecs / 3600)).padStart(2, '0');
       const m = String(Math.floor((totalSecs % 3600) / 60)).padStart(2, '0');
       const s = String(totalSecs % 60).padStart(2, '0');
-      return `${h}:${m}:${s}`;
+      return h + ':' + m + ':' + s;
     }
 
     function formatStamina(ms) {
@@ -332,40 +369,75 @@
       const totalMins = Math.floor(ms / 60000);
       const h = Math.floor(totalMins / 60);
       const m = totalMins % 60;
-      return `${h}h ${String(m).padStart(2, '0')}m`;
+      return h + 'h ' + String(m).padStart(2, '0') + 'm';
     }
 
     function formatGp(n) {
-      if (!n) return '0 gp';
+      if (typeof n !== 'number' || !isFinite(n)) return '0 gp';
       const a = Math.abs(n);
-      if (a < 1000) return `${Math.round(n)} gp`;
-      if (a < 1e6) return `${(n / 1e3).toFixed(1)}k gp`;
-      return `${(n / 1e6).toFixed(2)}kk gp`;
+      if (a < 1000) return Math.round(n) + ' gp';
+      if (a < 1e6) return (n / 1e3).toFixed(1) + 'k gp';
+      return (n / 1e6).toFixed(2) + 'kk gp';
+    }
+
+    function clock() { return new Date().toLocaleTimeString('pt-BR'); }
+
+    let firstLoadDone = false;
+
+    function showOffline(detail) {
+      setVpsState('offline', 'API OFFLINE');
+      const grid = document.getElementById('accountsGrid');
+      // Se já tem cards renderizados, mantém e só atualiza o badge (falha transitória)
+      if (firstLoadDone && grid.querySelector('.card')) return;
+      grid.innerHTML =
+        '<div class="offline-placeholder">' +
+          '<h3 style="color: var(--red);">\ud83d\udd34 API offline</h3>' +
+          '<p style="color: var(--text-muted); margin-top: 8px;">' + esc(detail) + '</p>' +
+          '<p style="color: var(--text-muted); margin-top: 4px; font-size: 0.78rem;">Última tentativa: ' + clock() + ' · tentando novamente a cada 2,5s</p>' +
+        '</div>';
     }
 
     async function fetchStatus() {
+      const controller = new AbortController();
+      const timer = setTimeout(() => controller.abort(), FETCH_TIMEOUT_MS);
       try {
-        const url = `${currentApi.replace(/\/$/, '')}/api/status`;
-        const res = await fetch(url, { cache: 'no-store' });
-        if (!res.ok) throw new Error(`HTTP ${res.status}`);
+        const url = currentApi.replace(/\/+$/, '') + '/api/status';
+        const res = await fetch(url, { cache: 'no-store', signal: controller.signal });
+        if (!res.ok) throw new Error('HTTP ' + res.status);
         const data = await res.json();
+        clearTimeout(timer);
+        firstLoadDone = true;
+        // API respondeu → grava como última conhecida boa
+        if (localStorage.getItem('huntera_api_ok') !== currentApi) {
+          localStorage.setItem('huntera_api_ok', currentApi);
+        }
         renderAccounts(data.accounts || []);
       } catch (err) {
-        console.warn('Erro ao buscar status:', err);
+        clearTimeout(timer);
+        const reason = err.name === 'AbortError'
+          ? 'Sem resposta em 6s (timeout) — verifique se o bot está rodando na VPS.'
+          : (window.location.protocol === 'https:' && currentApi.startsWith('http://'))
+            ? 'Bloqueado pelo navegador: página HTTPS chamando API HTTP (Mixed Content). Use uma URL HTTPS.'
+            : 'Falha de conexão com ' + currentApi + ' — o bot/tunnel pode estar fora.';
+        showOffline(reason);
       }
     }
 
     function renderAccounts(accounts) {
       const grid = document.getElementById('accountsGrid');
       if (!accounts || accounts.length === 0) {
-        grid.innerHTML = `
-          <div class="offline-placeholder">
-            <h3 style="color: var(--yellow);">Aguardando telemetria…</h3>
-            <p style="color: var(--text-muted); margin-top: 8px;">Nenhuma conta reportou status ainda. Verifique se o bot está rodando na VPS.</p>
-          </div>
-        `;
+        setVpsState('partial', 'AGUARDANDO TELEMETRIA');
+        grid.innerHTML =
+          '<div class="offline-placeholder">' +
+            '<h3 style="color: var(--yellow);">Aguardando telemetria…</h3>' +
+            '<p style="color: var(--text-muted); margin-top: 8px;">API respondeu, mas nenhuma conta reportou status ainda. Verifique se o bot está rodando na VPS.</p>' +
+          '</div>';
         return;
       }
+
+      const inGameCount = accounts.filter(a => a.inGame).length;
+      setVpsState(inGameCount ? 'online' : 'partial',
+        inGameCount ? inGameCount + '/' + accounts.length + ' EM JOGO' : 'API ONLINE');
 
       grid.innerHTML = accounts.map((acc, index) => {
         const hpPct = acc.maxHp ? Math.max(0, Math.min(100, Math.round((acc.hp / acc.maxHp) * 100))) : 0;
@@ -377,15 +449,15 @@
         const bPct = bReq > 0 ? Math.min(100, Math.round((bKills / bReq) * 100)) : 0;
         const bBonus = bestiary.bonusPercent || 0;
 
-        const huntName = acc.hunt ? `${acc.hunt.huntId} (tier ${acc.hunt.tier || 0})` : 'Aguardando início';
+        const huntName = acc.hunt ? esc(acc.hunt.huntId) + ' (tier ' + esc(acc.hunt.tier || 0) + ')' : 'Aguardando início';
         const sessionRemaining = acc.sessionRemainingMs ? formatTime(acc.sessionRemainingMs) : 'Ilimitada (VIP)';
 
         return `
           <div class="card">
             <div class="card-header">
               <div class="char-info">
-                <h2>${acc.charName || 'Conta ' + (index + 1)}</h2>
-                <span class="char-level">Nível ${acc.level || '—'}</span>
+                <h2>${esc(acc.charName || 'Conta ' + (index + 1))}</h2>
+                <span class="char-level">Nível ${esc(acc.level ?? '—')}</span>
               </div>
               <span class="badge ${acc.inGame ? 'badge-green' : 'badge-yellow'}">
                 ${acc.inGame ? 'EM JOGO' : 'CONECTANDO'}
@@ -418,7 +490,7 @@
             <!-- Bestiário -->
             <div class="bestiary-box">
               <div class="bestiary-header">
-                <span>🎯 Bestiário: ${bestiary.currentMonster || 'Rat'}</span>
+                <span>🎯 Bestiário: ${esc(bestiary.currentMonster || 'Rat')}</span>
                 <span class="badge badge-purple">+${bBonus}% XP</span>
               </div>
               <div class="progress-track" style="height: 8px;">
@@ -458,9 +530,12 @@
       }).join('');
     }
 
-    // Polling a cada 2.5 segundos
+    // ── Polling: pausa quando a aba está oculta ─────────────
     fetchStatus();
-    setInterval(fetchStatus, 2500);
+    setInterval(() => { if (document.visibilityState === 'visible') fetchStatus(); }, POLL_MS);
+    document.addEventListener('visibilitychange', () => {
+      if (document.visibilityState === 'visible') fetchStatus();
+    });
   </script>
 </body>
 </html>

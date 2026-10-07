@@ -132,8 +132,9 @@ class TerminalUI {
     const memMb = Math.round(mem.rss / 1024 / 1024);
 
     const a = s.analyzer || {};
-    const duration = a.durationMs || 0;
+    const duration = now - this.startTime;
     const xpHour = duration > 30000 ? Math.round((Number(a.experience) || 0) * 3600000 / duration) : 0;
+    const goldHour = duration > 30000 ? Math.round((Number(a.lootValue) || 0) * 3600000 / duration) : 0;
     const balance = (Number(a.lootValue) || 0) - (Number(a.waste) || 0);
 
     let statusBadge = `${C.gray}[ CONECTANDO ]${C.reset}`;
@@ -161,7 +162,7 @@ class TerminalUI {
     lines.push(`  ${C.bold}Estratégia:${C.reset} ${C.green}100% ZERO-WASTE${C.reset} (0 poções compradas / Farm de Bestiário sequencial)`);
     lines.push(`${C.gray}────────────────────────────────────────────────────────────────────────────${C.reset}`);
     lines.push(`  ${C.bold}[ ESTATÍSTICAS DA SESSÃO ]${C.reset}`);
-    lines.push(`  Tempo: ${this.formatTime(now - this.startTime)}  │  Kills: ${a.kills || 0}  │  XP/h: ${this.formatGp(xpHour)}/h`);
+    lines.push(`  Tempo: ${this.formatTime(duration)}  │  Kills: ${a.kills || 0}  │  XP/h: ${this.formatGp(xpHour)}/h  │  Gold/h: ${this.formatGp(goldHour)}/h`);
     lines.push(`  Loots: ${s.lootsTaken || 0} coletados  │  Mortes: ${s.deaths || 0}  │  Saldo: ${balance >= 0 ? C.green : C.red}${this.formatGp(balance)}${C.reset}`);
     lines.push(`${C.gray}────────────────────────────────────────────────────────────────────────────${C.reset}`);
     lines.push(`  ${C.bold}[ ATIVIDADE EM TEMPO REAL ]${C.reset}`);
