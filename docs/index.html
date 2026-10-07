@@ -202,6 +202,77 @@
     .fill-hp { background: linear-gradient(90deg, #059669, #10b981); box-shadow: 0 0 8px var(--green-glow); }
     .fill-mana { background: linear-gradient(90deg, #0891b2, #06b6d4); }
     .fill-bestiary { background: linear-gradient(90deg, #7c3aed, #a855f7); }
+    .fill-xp { background: linear-gradient(90deg, #d97706, #f59e0b); }
+
+    /* Painel de Resumo Global */
+    .summary-panel {
+      max-width: 1300px;
+      margin: 0 auto 20px auto;
+      display: grid;
+      grid-template-columns: repeat(auto-fit, minmax(220px, 1fr));
+      gap: 14px;
+    }
+    .summary-stat {
+      background: var(--card-bg);
+      border: 1px solid var(--card-border);
+      border-radius: 10px;
+      padding: 14px 18px;
+      display: flex;
+      flex-direction: column;
+      gap: 4px;
+      box-shadow: 0 4px 14px rgba(0,0,0,0.2);
+    }
+    .summary-stat-label {
+      font-size: 0.75rem;
+      text-transform: uppercase;
+      letter-spacing: 0.05em;
+      color: var(--text-muted);
+      font-weight: 600;
+    }
+    .summary-stat-val {
+      font-size: 1.35rem;
+      font-weight: 700;
+      color: #fff;
+      display: flex;
+      align-items: baseline;
+      gap: 6px;
+    }
+    .summary-stat-sub {
+      font-size: 0.8rem;
+      color: var(--text-muted);
+      font-weight: normal;
+    }
+
+    /* Caixa de Ouro Individual */
+    .gold-box {
+      background: rgba(245, 158, 11, 0.08);
+      border: 1px solid rgba(245, 158, 11, 0.25);
+      border-radius: 8px;
+      padding: 10px 14px;
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+    }
+    .gold-box-left {
+      display: flex;
+      flex-direction: column;
+    }
+    .gold-box-label {
+      font-size: 0.7rem;
+      text-transform: uppercase;
+      letter-spacing: 0.05em;
+      color: var(--yellow);
+      font-weight: 700;
+    }
+    .gold-box-sub {
+      font-size: 0.72rem;
+      color: var(--text-muted);
+    }
+    .gold-box-amount {
+      font-size: 1.15rem;
+      font-weight: 700;
+      color: #fef08a;
+    }
 
     /* Stamina & Hunt Info */
     .stats-box {
@@ -292,6 +363,30 @@
       <button class="btn" onclick="saveEndpoint()">Salvar</button>
     </div>
   </header>
+
+  <!-- Resumo Global de Todas as Contas -->
+  <div class="summary-panel" id="summaryPanel" style="display: none;">
+    <div class="summary-stat">
+      <span class="summary-stat-label">💰 Ouro Total (4 Contas)</span>
+      <span class="summary-stat-val" id="sumGoldVal" style="color: #fef08a;">0 gp</span>
+      <span class="summary-stat-sub" id="sumGoldSub">0 gp mochila</span>
+    </div>
+    <div class="summary-stat">
+      <span class="summary-stat-label">⭐ Bônus Médio Bestiário</span>
+      <span class="summary-stat-val" id="sumBonusVal" style="color: #c4b5fd;">+0% XP</span>
+      <span class="summary-stat-sub">Multiplicador permanente</span>
+    </div>
+    <div class="summary-stat">
+      <span class="summary-stat-label">💀 Kills Totais Bestiário</span>
+      <span class="summary-stat-val" id="sumKillsVal">0</span>
+      <span class="summary-stat-sub" id="sumCompletedVal">0 concluídos</span>
+    </div>
+    <div class="summary-stat">
+      <span class="summary-stat-label">⚡ Status Operacional</span>
+      <span class="summary-stat-val" id="sumActiveVal" style="color: var(--green);">0 / 4</span>
+      <span class="summary-stat-sub">100% Zero-Waste</span>
+    </div>
+  </div>
 
   <main class="grid" id="accountsGrid">
     <div class="offline-placeholder">
@@ -439,15 +534,49 @@
       setVpsState(inGameCount ? 'online' : 'partial',
         inGameCount ? inGameCount + '/' + accounts.length + ' EM JOGO' : 'API ONLINE');
 
+      // Calcular estatísticas globais das 4 contas
+      let totalGold = 0;
+      let totalKills = 0;
+      let totalBonus = 0;
+      let totalCompleted = 0;
+
+      accounts.forEach(acc => {
+        totalGold += (Number(acc.gold) || 0);
+        const b = acc.bestiary || {};
+        totalBonus += (Number(b.bonusPercent) || 0);
+        totalCompleted += (Number(b.completedMonsters) || 0);
+        const charKills = b.totalKills || (b.byMonster ? Object.values(b.byMonster).reduce((sum, v) => sum + (Number(v) || 0), 0) : 0);
+        totalKills += charKills;
+      });
+
+      const avgBonus = accounts.length ? (totalBonus / accounts.length).toFixed(1) : '0';
+      const summaryEl = document.getElementById('summaryPanel');
+      if (summaryEl) {
+        summaryEl.style.display = 'grid';
+        document.getElementById('sumGoldVal').textContent = formatGp(totalGold);
+        document.getElementById('sumGoldSub').textContent = totalGold.toLocaleString('pt-BR') + ' gp somados';
+        document.getElementById('sumBonusVal').textContent = '+' + avgBonus + '% XP';
+        document.getElementById('sumKillsVal').textContent = totalKills.toLocaleString('pt-BR');
+        document.getElementById('sumCompletedVal').textContent = totalCompleted + ' monstros 100%';
+        document.getElementById('sumActiveVal').textContent = inGameCount + ' / ' + accounts.length + ' Em Jogo';
+      }
+
       grid.innerHTML = accounts.map((acc, index) => {
         const hpPct = acc.maxHp ? Math.max(0, Math.min(100, Math.round((acc.hp / acc.maxHp) * 100))) : 0;
         const manaPct = acc.maxMana ? Math.max(0, Math.min(100, Math.round((acc.mana / acc.maxMana) * 100))) : 0;
+
+        const xp = Number(acc.experience) || 0;
+        const xpNeeded = Number(acc.experienceNeeded) || 0;
+        const xpPct = xpNeeded > 0 ? Math.min(100, Math.round(xp * 100 / xpNeeded)) : 0;
 
         const bestiary = acc.bestiary || {};
         const bKills = bestiary.kills || 0;
         const bReq = bestiary.required || 2500;
         const bPct = bReq > 0 ? Math.min(100, Math.round((bKills / bReq) * 100)) : 0;
         const bBonus = bestiary.bonusPercent || 0;
+        const bComp = bestiary.completedMonsters || 0;
+        const bTotal = bestiary.totalMonsters || 164;
+        const charKills = bestiary.totalKills || (bestiary.byMonster ? Object.values(bestiary.byMonster).reduce((sum, v) => sum + (Number(v) || 0), 0) : 0);
 
         const huntName = acc.hunt ? esc(acc.hunt.huntId) + ' (tier ' + esc(acc.hunt.tier || 0) + ')' : 'Aguardando início';
         const sessionRemaining = acc.sessionRemainingMs ? formatTime(acc.sessionRemainingMs) : 'Ilimitada (VIP)';
@@ -464,7 +593,16 @@
               </span>
             </div>
 
-            <!-- Vitals -->
+            <!-- Ouro Mochila -->
+            <div class="gold-box">
+              <div class="gold-box-left">
+                <span class="gold-box-label">💰 Ouro Total (Mochila)</span>
+                <span class="gold-box-sub">${Number(acc.gold || 0).toLocaleString('pt-BR')} gp</span>
+              </div>
+              <div class="gold-box-amount">${formatGp(acc.gold)}</div>
+            </div>
+
+            <!-- Vitals & XP -->
             <div class="bar-group">
               <div class="bar-row">
                 <div class="bar-label">
@@ -485,20 +623,35 @@
                   <div class="progress-fill fill-mana" style="width: ${manaPct}%;"></div>
                 </div>
               </div>
+
+              ${xpNeeded > 0 ? `
+              <div class="bar-row">
+                <div class="bar-label">
+                  <span style="color: var(--yellow);">XP NÍVEL</span>
+                  <span>${xp.toLocaleString('pt-BR')} / ${xpNeeded.toLocaleString('pt-BR')} (${xpPct}%)</span>
+                </div>
+                <div class="progress-track">
+                  <div class="progress-fill fill-xp" style="width: ${xpPct}%;"></div>
+                </div>
+              </div>
+              ` : ''}
             </div>
 
             <!-- Bestiário -->
             <div class="bestiary-box">
               <div class="bestiary-header">
                 <span>🎯 Bestiário: ${esc(bestiary.currentMonster || 'Rat')}</span>
-                <span class="badge badge-purple">+${bBonus}% XP</span>
+                <span class="badge badge-purple">⭐ +${bBonus}% XP</span>
               </div>
               <div class="progress-track" style="height: 8px;">
                 <div class="progress-fill fill-bestiary" style="width: ${bPct}%;"></div>
               </div>
               <div style="display: flex; justify-content: space-between; font-size: 0.72rem; color: #a78bfa;">
-                <span>Progresso: ${bKills} / ${bReq}</span>
-                <span>${bPct}% completo</span>
+                <span>Monstro: ${bKills} / ${bReq} (${bPct}%)</span>
+                <span>🏆 ${bComp}/${bTotal} concluídos</span>
+              </div>
+              <div style="font-size: 0.72rem; color: #c4b5fd; text-align: right;">
+                Kills no bestiário: <strong>${charKills.toLocaleString('pt-BR')}</strong>
               </div>
             </div>
 

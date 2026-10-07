@@ -149,7 +149,12 @@ class TerminalUI {
     lines.push(`${C.cyan}║   ${C.bold}⚔  HUNTERA HEADLESS BOT — MODO TERMINAL (1 CPU / 1 GB RAM)${C.reset}${C.cyan}               ║${C.reset}`);
     lines.push(`${C.cyan}╚════════════════════════════════════════════════════════════════════════════╝${C.reset}`);
     
+    const xpProg = (s.experience && s.experienceNeeded)
+      ? `${s.experience.toLocaleString('pt-BR')} / ${s.experienceNeeded.toLocaleString('pt-BR')} (${Math.round(s.experience * 100 / s.experienceNeeded)}%)`
+      : '—';
+
     lines.push(`  ${C.bold}Personagem:${C.reset} ${C.white}${s.charName || 'Detectando…'}${C.reset} (Lv. ${s.level ?? '—'})      ${C.bold}Status:${C.reset} ${statusBadge}`);
+    lines.push(`  ${C.bold}Ouro Total:${C.reset} ${C.yellow}${this.formatGp(s.gold)}${C.reset} (${(s.gold || 0).toLocaleString('pt-BR')} gp)  │  ${C.bold}XP Nível:${C.reset} ${xpProg}`);
     lines.push(`  ${C.bold}HP        :${C.reset} ${this.formatBar(s.hp, s.maxHp, 16, C.green)}`);
     lines.push(`  ${C.bold}Mana      :${C.reset} ${this.formatBar(s.mana, s.maxMana, 16, C.cyan)}`);
     lines.push(`  ${C.bold}Stamina   :${C.reset} ${this.formatStamina(s.staminaMs)}  │  ${C.bold}Sessão:${C.reset} ${s.sessionRemainingMs ? this.formatTime(s.sessionRemainingMs) : (s.premium ? 'Ilimitada (VIP)' : '—')}  │  ${C.bold}Refills:${C.reset} ${s.staminaRefillsLeft ?? '—'}/6  │  ${C.bold}RAM:${C.reset} ${memMb} MB`);
@@ -157,7 +162,9 @@ class TerminalUI {
     if (s.bestiary) {
       const b = s.bestiary;
       const bProgress = b.required ? `${b.kills || 0}/${b.required} (${Math.min(100, Math.round((b.kills || 0) * 100 / b.required))}%)` : `${b.kills || 0}`;
-      lines.push(`  ${C.bold}Bestiário :${C.reset} ${C.magenta}${b.currentMonster || 'Em progresso'}${C.reset} [${bProgress}]  │  ${C.bold}Bônus XP:${C.reset} ${C.green}+${b.bonusPercent || 0}%${C.reset}  │  ${C.bold}Concluídos:${C.reset} ${b.completedMonsters || 0}`);
+      const totalKillsStr = (b.totalKills || 0).toLocaleString('pt-BR');
+      lines.push(`  ${C.bold}Bestiário :${C.reset} ${C.magenta}${b.currentMonster || 'Em progresso'}${C.reset} [${bProgress}]  │  ${C.bold}Bônus XP:${C.reset} ${C.green}+${b.bonusPercent || 0}%${C.reset}  │  ${C.bold}Concluídos:${C.reset} ${b.completedMonsters || 0}/${b.totalMonsters || 164}`);
+      lines.push(`  ${C.bold}XP Bestiário:${C.reset} ${C.green}+${b.bonusPercent || 0}% permanente${C.reset}  │  ${C.bold}Kills Totais:${C.reset} ${C.white}${totalKillsStr} monstros${C.reset}`);
     }
     lines.push(`  ${C.bold}Estratégia:${C.reset} ${C.green}100% ZERO-WASTE${C.reset} (0 poções compradas / Farm de Bestiário sequencial)`);
     lines.push(`${C.gray}────────────────────────────────────────────────────────────────────────────${C.reset}`);

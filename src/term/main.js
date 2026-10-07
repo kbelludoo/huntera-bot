@@ -102,6 +102,8 @@ const state = {
   charName: null,
   inGame: false,
   level: null,
+  experience: null,
+  experienceNeeded: null,
   hp: null,
   maxHp: null,
   mana: null,
@@ -127,6 +129,7 @@ const state = {
     bonusPercent: 0,
     completedMonsters: 0,
     totalMonsters: 164,
+    totalKills: 0,
     stages: {},
     byMonster: {}
   }
@@ -138,6 +141,8 @@ function persistStatus() {
       id: accountId,
       charName: state.charName,
       level: state.level,
+      experience: state.experience,
+      experienceNeeded: state.experienceNeeded,
       inGame: state.inGame,
       hp: state.hp,
       maxHp: state.maxHp,
@@ -288,6 +293,11 @@ async function start() {
   });
 
   // Saldo real de gold da mochila
+  socket.on('player-inventory', (msg) => {
+    if (typeof msg.gold === 'number') state.gold = msg.gold;
+    ui.handleEvent('tick', state);
+  });
+
   socket.on('inventory-delta', (msg) => {
     if (typeof msg.gold === 'number') state.gold = msg.gold;
     ui.handleEvent('tick', state);
@@ -295,6 +305,8 @@ async function start() {
 
   socket.on('player-stats', (msg) => {
     state.level = msg.level;
+    if (typeof msg.experience === 'number') state.experience = msg.experience;
+    if (typeof msg.experienceNeeded === 'number') state.experienceNeeded = msg.experienceNeeded;
     state.hp = msg.health;
     state.maxHp = msg.maxHealth;
     state.mana = msg.mana;
@@ -408,6 +420,7 @@ async function start() {
     if (msg.kills && typeof msg.kills === 'object') {
       state.bestiary.byMonster = Object.assign(state.bestiary.byMonster, msg.kills);
       state.bestiary.kills = msg.kills[bestiaryId] !== undefined ? msg.kills[bestiaryId] : (state.bestiary.kills || 0);
+      state.bestiary.totalKills = Object.values(state.bestiary.byMonster).reduce((sum, val) => sum + (Number(val) || 0), 0);
     }
 
     if (msg.stages && typeof msg.stages === 'object') {
