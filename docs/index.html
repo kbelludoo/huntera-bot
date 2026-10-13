@@ -359,7 +359,7 @@
 
     <div class="endpoint-box">
       <span>📡 API:</span>
-      <input type="text" id="apiInput" placeholder="http://129.153.157.17:3000">
+      <input type="text" id="apiInput" placeholder="http://127.0.0.1:3000">
       <button class="btn" onclick="saveEndpoint()">Salvar</button>
     </div>
   </header>
@@ -409,7 +409,7 @@
     const BADGE_TEXT = document.getElementById('vpsBadgeText');
     const BADGE_PULSE = document.getElementById('vpsPulse');
 
-    const defaultApi = (window.location.hostname === 'localhost' || window.location.hostname === '129.153.157.17')
+    const defaultApi = (window.location.hostname === 'localhost' || window.location.hostname === '127.0.0.1')
       ? window.location.origin
       : 'https://ron-flexible-respective-caring.trycloudflare.com';
 
