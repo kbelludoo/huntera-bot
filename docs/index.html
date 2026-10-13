@@ -357,11 +357,6 @@
       <span class="badge badge-yellow" id="vpsBadge"><span class="pulse pulse-yellow" id="vpsPulse"></span><span id="vpsBadgeText">CONECTANDO…</span></span>
     </div>
 
-    <div class="endpoint-box">
-      <span>📡 API:</span>
-      <input type="text" id="apiInput" placeholder="http://127.0.0.1:3000">
-      <button class="btn" onclick="saveEndpoint()">Salvar</button>
-    </div>
   </header>
 
   <!-- Resumo Global de Todas as Contas -->
@@ -409,14 +404,9 @@
     const BADGE_TEXT = document.getElementById('vpsBadgeText');
     const BADGE_PULSE = document.getElementById('vpsPulse');
 
-    const defaultApi = (window.location.hostname === 'localhost' || window.location.hostname === '127.0.0.1')
+    const currentApi = (window.location.hostname === 'localhost' || window.location.hostname === '127.0.0.1')
       ? window.location.origin
       : 'https://ron-flexible-respective-caring.trycloudflare.com';
-
-    // Lembra a última API que FUNCIONOU (cai nela se a salva falhar)
-    let currentApi = localStorage.getItem('huntera_api') || localStorage.getItem('huntera_api_ok') || defaultApi;
-    const apiInput = document.getElementById('apiInput');
-    apiInput.value = currentApi;
 
     // ── XSS: escapa qualquer string vinda da API ────────────
     function esc(v) {
@@ -433,22 +423,6 @@
       BADGE_PULSE.className = 'pulse' + (c === 'green' ? '' : ' pulse-' + c);
       BADGE_TEXT.textContent = label;
     }
-
-    function saveEndpoint() {
-      const val = apiInput.value.trim().replace(/\/+$/, '');
-      if (!val) return;
-      // Mixed Content: página HTTPS não consegue chamar API HTTP
-      if (window.location.protocol === 'https:' && val.startsWith('http://')) {
-        alert('\u26a0\ufe0f A página é HTTPS e essa API é HTTP. O navegador vai BLOQUEAR a conexão (Mixed Content).\nUse uma URL HTTPS (ex.: tunnel Cloudflare).');
-        return;
-      }
-      localStorage.setItem('huntera_api', val);
-      currentApi = val;
-      fetchStatus();
-    }
-
-    // Enter no input também salva
-    apiInput.addEventListener('keydown', (e) => { if (e.key === 'Enter') saveEndpoint(); });
 
     function formatTime(ms) {
       if (!ms || ms <= 0) return '00:00:00';
@@ -502,10 +476,6 @@
         const data = await res.json();
         clearTimeout(timer);
         firstLoadDone = true;
-        // API respondeu → grava como última conhecida boa
-        if (localStorage.getItem('huntera_api_ok') !== currentApi) {
-          localStorage.setItem('huntera_api_ok', currentApi);
-        }
         renderAccounts(data.accounts || []);
       } catch (err) {
         clearTimeout(timer);
@@ -585,7 +555,7 @@
           <div class="card">
             <div class="card-header">
               <div class="char-info">
-                <h2>${esc(acc.charName || 'Conta ' + (index + 1))}</h2>
+                <h2>Conta #${index + 1}</h2>
                 <span class="char-level">Nível ${esc(acc.level ?? '—')}</span>
               </div>
               <span class="badge ${acc.inGame ? 'badge-green' : 'badge-yellow'}">
