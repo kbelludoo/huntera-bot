@@ -1,22 +1,16 @@
 [Unit]
-Description=Huntera Headless Bot — Modo Terminal VPS
+Description=Huntera Native Go Bot Service
 After=network.target
 
 [Service]
 Type=simple
 User=ubuntu
-WorkingDirectory=/home/ubuntu/huntera-cli
-ExecStart=/usr/bin/npm start
+WorkingDirectory=/home/ubuntu/huntera-bot
+ExecStart=/home/ubuntu/huntera-bot/huntera-bot-linux
 Restart=always
-RestartSec=10
-Environment=NODE_ENV=production
-
-# Limites de segurança para VPS Free 1 vCPU / 1 GB RAM
-MemoryMax=450M
-CPUQuota=85%
-
-StandardOutput=journal
-StandardError=journal
+RestartSec=5
+StandardOutput=append:/home/ubuntu/huntera-bot/bot.log
+StandardError=append:/home/ubuntu/huntera-bot/bot.log
 
 [Install]
 WantedBy=multi-user.target

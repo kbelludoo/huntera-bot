@@ -6,14 +6,14 @@ Solução nativa desenvolvida em **Go (Golang)** de ultra-alta performance para 
 
 ## ⚡ Vantagens da Arquitetura Go Nativa
 
-| Recurso | Huntera Node.js Legado | Huntera Native Go Engine |
-| :--- | :--- | :--- |
-| **Uso de RAM** | 150 MB ~ 250 MB | **5 MB ~ 15 MB** (-90% RAM) |
-| **Uso de CPU** | 2% ~ 5% | **0.1% ~ 0.5%** |
-| **Runtime** | Node.js + NPM | **Binário Único Estático (Zero Runtime)** |
-| **Protocolo** | Emulação de DOM / WS | **WebSocket + Cipher RC4 / Protocolo Nativo** |
-| **Conexão** | 1 conta por processo | **Multi-Contas Concorrentes (Goroutines)** |
-| **Dashboard** | Servidor Express | **HTTP Mux Nativo Go embutido (Porta 3000)** |
+| Recurso | Huntera Native Go Engine |
+| :--- | :--- |
+| **Uso de RAM** | **5 MB ~ 15 MB** (Ultra-leve) |
+| **Uso de CPU** | **0.1% ~ 0.5%** |
+| **Runtime** | **Binário Único Estático em Go (Zero Runtime)** |
+| **Protocolo** | **WebSocket + Cipher RC4 / Protocolo Binário Nativo** |
+| **Conexão** | **Multi-Contas Concorrentes (Goroutines)** |
+| **Dashboard** | **HTTP Mux Nativo Go embutido (Porta 3000)** |
 
 ---
 
