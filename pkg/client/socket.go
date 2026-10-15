@@ -3,7 +3,9 @@ package client
 import (
 	"crypto/tls"
 	"fmt"
+	"log"
 	"net/http"
+	"strings"
 	"sync"
 	"time"
 
@@ -46,6 +48,10 @@ func (s *SocketClient) On(eventType string, handler EventHandler) {
 }
 
 func (s *SocketClient) dispatch(event protocol.RawEvent) {
+	if strings.Contains(event.Type, "party") || strings.Contains(event.Type, "team") || strings.Contains(event.Type, "leader") {
+		log.Printf("[%s] 🔔 [REDE] Evento %s recebido: %s", s.characterName, event.Type, string(event.Payload))
+	}
+
 	s.handlersMu.RLock()
 	handlers := s.handlers[event.Type]
 	allHandlers := s.handlers["*"]
@@ -147,6 +153,7 @@ func (s *SocketClient) readLoop() {
 	}()
 
 	for {
+		_ = s.conn.SetReadDeadline(time.Now().Add(45 * time.Second))
 		messageType, data, err := s.conn.ReadMessage()
 		if err != nil {
 			return
@@ -216,4 +223,83 @@ func (s *SocketClient) SetIdleTraining(enabled bool) error {
 
 func (s *SocketClient) RequestCyclopedia() error {
 	return s.Send("cyclopedia-request", map[string]any{})
+}
+
+func (s *SocketClient) SetHuntSellRules(onCapacityFull bool, everyHalfHour bool) error {
+	return s.Send("set-hunt-sell-rules", map[string]any{
+		"rules": map[string]any{
+			"onCapacityFull": onCapacityFull,
+			"everyHalfHour":  everyHalfHour,
+		},
+	})
+}
+
+func (s *SocketClient) HuntQuickSell() error {
+	return s.Send("hunt-quick-sell", map[string]any{})
+}
+
+func (s *SocketClient) SetSellLock(uid any, locked bool) error {
+	return s.Send("set-sell-lock", map[string]any{
+		"uid":    uid,
+		"locked": locked,
+	})
+}
+
+func (s *SocketClient) ConfigureQuickSellItem(itemID int, enabled bool) error {
+	return s.Send("quick-sell-configure", map[string]any{
+		"itemId":  itemID,
+		"enabled": enabled,
+	})
+}
+
+func (s *SocketClient) MarketOpen() error {
+	return s.Send("market-open", map[string]any{})
+}
+
+func (s *SocketClient) MarketClose() error {
+	return s.Send("market-close", map[string]any{})
+}
+
+func (s *SocketClient) MarketCreateOffer(itemID int, amount int, piecePrice int) error {
+	return s.Send("market-create-offer", map[string]any{
+		"kind":       "sell",
+		"itemId":     itemID,
+		"amount":     amount,
+		"piecePrice": piecePrice,
+	})
+}
+
+func (s *SocketClient) PartyInviteName(name string) error {
+	return s.Send("party-invite-name", map[string]any{"name": name, "characterName": name})
+}
+
+func (s *SocketClient) PartyFollowLeader() error {
+	return s.Send("party-follow-leader", map[string]any{})
+}
+
+func (s *SocketClient) PartyRespond(accept bool) error {
+	return s.Send("party-respond", map[string]any{"accept": accept})
+}
+
+func (s *SocketClient) HuntTeamRespond(accept bool) error {
+	return s.Send("hunt-team-respond", map[string]any{"accept": accept})
+}
+
+func (s *SocketClient) PartyCostsOffer() error {
+	return s.Send("party-costs-offer", map[string]any{})
+}
+
+func (s *SocketClient) PartyCostsRespond(accept bool) error {
+	return s.Send("party-costs-respond", map[string]any{"accept": accept})
+}
+
+func (s *SocketClient) BlessingsOpen() error {
+	return s.Send("blessings-open", map[string]any{})
+}
+
+func (s *SocketClient) BuyBlessing(kind string) error {
+	if kind == "" {
+		kind = "all"
+	}
+	return s.Send("blessing-buy", map[string]any{"kind": kind})
 }

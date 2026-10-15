@@ -2,7 +2,6 @@ package main
 
 import (
 	"context"
-	_ "embed"
 	"encoding/json"
 	"fmt"
 	"log"
@@ -15,9 +14,6 @@ import (
 	"huntera-bot/pkg/bot"
 	"huntera-bot/pkg/server"
 )
-
-//go:embed accounts.json
-var defaultAccountsJSON []byte
 
 type BotManager struct {
 	bots []*bot.Bot
@@ -70,15 +66,23 @@ func main() {
 		HuntID        string `json:"huntId"`
 		Tier          int    `json:"tier"`
 		AutoStamina   bool   `json:"autoStamina"`
+		TargetStage   int    `json:"targetStage"`
+		Role          string `json:"role"`
+		PartnerName   string `json:"partnerName"`
 	}
 
-	content := defaultAccountsJSON
+	var content []byte
 	if diskData, err := os.ReadFile("accounts.json"); err == nil {
 		content = diskData
+	} else if exData, err := os.ReadFile("accounts.example.json"); err == nil {
+		content = exData
+		log.Println("[Aviso] Usando accounts.example.json (crie accounts.json para suas contas reais)")
+	} else {
+		log.Fatalf("Falha: nenhum arquivo de contas encontrado (crie accounts.json)")
 	}
 
 	if err := json.Unmarshal(content, &accountConfigs); err != nil {
-		log.Fatalf("Falha ao carregar accounts.json: %v", err)
+		log.Fatalf("Falha ao carregar accounts: %v", err)
 	}
 
 	targetAcc := os.Getenv("ACCOUNT")
@@ -92,6 +96,10 @@ func main() {
 		if charName == "" {
 			charName = a.Name
 		}
+		tStage := a.TargetStage
+		if tStage <= 0 {
+			tStage = bot.DefaultTargetStage
+		}
 		activeConfigs = append(activeConfigs, bot.AccountConfig{
 			ID:          a.ID,
 			Email:       a.Email,
@@ -99,7 +107,10 @@ func main() {
 			CharName:    charName,
 			HuntID:      a.HuntID,
 			Tier:        a.Tier,
-			AutoStamina: true,
+			AutoStamina: a.AutoStamina,
+			TargetStage: tStage,
+			Role:        a.Role,
+			PartnerName: a.PartnerName,
 		})
 	}
 
@@ -168,6 +179,8 @@ func main() {
 					huntStr := "Aguardando"
 					if st.Hunt != nil {
 						huntStr = fmt.Sprintf("%s (tier %d)", st.Hunt.HuntID, st.Hunt.Tier)
+					} else if st.StaminaMs <= 60000 {
+						huntStr = "🏋️ Treino Idle (Skills Zero-Waste)"
 					}
 
 					bonus := 0
@@ -176,6 +189,7 @@ func main() {
 					currMonst := "—"
 					bKills := 0
 					bReq := 2500
+					stageStr := ""
 					if b != nil {
 						bonus = b.BonusPercent
 						comp = b.CompletedMonsters
@@ -183,6 +197,9 @@ func main() {
 						currMonst = b.CurrentMonster
 						bKills = b.Kills
 						bReq = b.Required
+						if b.TargetStage > 0 {
+							stageStr = fmt.Sprintf(" [Estágio %d/%d]", b.Stage+1, b.TargetStage)
+						}
 					}
 
 					statusBadge := "\033[1;33m[ CONECTANDO ]\033[0m"
@@ -193,8 +210,8 @@ func main() {
 					fmt.Printf("[%s: \033[1m%s\033[0m (Lv. %d)] %s\n", st.ID, st.CharName, st.Level, statusBadge)
 					fmt.Printf("  💰 Ouro: \033[1;33m%s\033[0m (%d gp) │ XP: %d/%d │ Stamina: %s\n",
 						formatGp(st.Gold), st.Gold, st.Experience, st.ExperienceNeeded, formatStamina(st.StaminaMs))
-					fmt.Printf("  ⭐ Bestiário: \033[1;35m%s\033[0m [%d/%d] │ Bônus: \033[1;32m+%d%% XP\033[0m │ 100%%: %d/%d │ Kills: %d\n",
-						currMonst, bKills, bReq, bonus, comp, totalMonst, charKills)
+					fmt.Printf("  ⭐ Bestiário: \033[1;35m%s\033[0m%s [%d/%d] │ Bônus: \033[1;32m+%d%% XP\033[0m │ 100%%: %d/%d │ Kills: %d\n",
+						currMonst, stageStr, bKills, bReq, bonus, comp, totalMonst, charKills)
 					fmt.Printf("  🗡️ Hunt: \033[36m%s\033[0m │ Zero-Waste: 100%%\n", huntStr)
 					fmt.Println("--------------------------------------------------------------------------------")
 				}

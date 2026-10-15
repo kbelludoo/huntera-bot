@@ -1,6 +1,10 @@
-# Dependências e caches
-node_modules/
-package-lock.json
+# Binários compilados
+*.exe
+*-linux
+huntera-bot
+huntera-bot-linux
+*.bin
+*.zip
 
 # Dados e Telemetria em tempo real
 data/
@@ -11,6 +15,7 @@ dump-*.json
 accounts.json
 session.json
 config.json
+.secrets.json
 .env
 
 # Arquivos de sistema e chaves

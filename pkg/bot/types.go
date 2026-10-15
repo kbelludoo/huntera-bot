@@ -1,14 +1,22 @@
 package bot
 
 var HuntOrder = []string{
-	"rat-hunt", "spider-hunt", "troll-hunt", "swamp-troll-hunt", "orc-hunt", "folda-hunt",
+	// 💎 Top Lucro, Zero-Gasto & Zero-Morte (Bestiário Sequencial Seguro)
+	"amazon-hunt",      // 1. Protective Charm (6.1k gp) - Lv 20+ (0 mortes, farm massivo)
+	"swamp-troll-hunt", // 2. Medicine Pouch (4k gp) - Lv 10+ (0 mortes)
+	"tarantula-hunt",   // 3. Tarantula Eggs & Fangs - Lv 25+ (0 mortes)
+	"cult-hunt",        // 4. Rope Belt (7.7k - 15k gp) - Apenas Lv 75+ (quando o time aguentar)
+	"mutated-cave-hunt",// 5. Sabretooth (8.9k - 20k gp) - Apenas Lv 80+
+	"vampire-hunt",     // 6. Vampire Teeth & BoH - Apenas Lv 80+
+	// Sequência normal de hunts
+	"spider-hunt", "troll-hunt", "orc-hunt", "folda-hunt",
 	"skeleton-hunt", "rotworm-hunt", "dwarf-hunt", "minotaur-hunt", "gloom-ghost-wolf-hunt",
-	"amazon-hunt", "dark-cathedral-hunt", "ghoul-hunt", "rorc-hunt", "yalahar-elf-hunt",
+	"dark-cathedral-hunt", "ghoul-hunt", "rorc-hunt", "yalahar-elf-hunt",
 	"tarantula-hunt", "scarab-hunt", "swampling-hunt", "tortoise-hunt", "mutated-human-hunt",
 	"cyclops-hunt", "mummy-hunt", "bonelord-hunt", "orc-fortress-hunt", "green-djinn-hunt",
-	"blue-djinn-hunt", "carlin-corym-hunt", "cult-hunt", "elder-forest-hunt", "drefia-hunt",
+	"blue-djinn-hunt", "carlin-corym-hunt", "elder-forest-hunt", "drefia-hunt",
 	"ab-bonelord-hunt", "ice-golem-hunt", "lizard-steppe-hunt", "brimstone-cave-hunt",
-	"dragon-hunt", "vampire-hunt", "mutated-cave-hunt", "bog-raider-hunt", "giant-spider-hunt",
+	"dragon-hunt", "bog-raider-hunt", "giant-spider-hunt",
 	"deeplings-hunt", "hero-hunt", "wyrm-hunt", "zao-stronghold-hunt", "grimvale-warrens-hunt",
 	"rathleton-minotaurs-hunt", "grimvale-dens-hunt", "dragon-lord-hunt", "war-golem-hunt",
 	"lizard-chosen-hunt", "werehyaena-hunt", "werelion-hunt", "behemoth-hunt", "hellspawn-hunt",
@@ -17,6 +25,7 @@ var HuntOrder = []string{
 	"burster-spectre-hunt", "grim-reaper-hunt", "demon-hunt", "falcon-hunt",
 	"falcon-bastion-hunt", "cobra-bastion-hunt", "hell-hub-hunt", "catacombs-hunt",
 	"issavi-hunt", "issavi-south-hunt", "ice-library-hunt",
+	"rat-hunt", // Rato em último
 }
 
 type HuntState struct {
@@ -34,6 +43,8 @@ type BestiaryState struct {
 	CompletedMonsters int            `json:"completedMonsters"`
 	TotalMonsters     int            `json:"totalMonsters"`
 	TotalKills        int            `json:"totalKills"`
+	Stage             int            `json:"stage"`
+	TargetStage       int            `json:"targetStage"`
 	Stages            map[string]int `json:"stages"`
 	ByMonster         map[string]int `json:"byMonster"`
 }
@@ -43,6 +54,15 @@ type AnalyzerState struct {
 	Experience int `json:"experience"`
 	LootValue  int `json:"lootValue"`
 	Waste      int `json:"waste"`
+}
+
+type InventorySlot struct {
+	UID        any  `json:"uid"`
+	ItemID     int  `json:"itemId"`
+	Count      int  `json:"count"`
+	SellLocked bool `json:"sellLocked"`
+	Bound      bool `json:"bound"`
+	Tier       int  `json:"tier"`
 }
 
 type AccountStatus struct {
@@ -77,4 +97,8 @@ type AccountConfig struct {
 	HuntID      string `json:"huntId,omitempty"`
 	Tier        int    `json:"tier,omitempty"`
 	AutoStamina bool   `json:"autoStamina,omitempty"`
+	TargetStage  int      `json:"targetStage,omitempty"`
+	PartyMembers []string `json:"-"`
+	Role         string   `json:"role,omitempty"`        // "leader" ou "follower"
+	PartnerName  string   `json:"partnerName,omitempty"` // Nome do char parceiro da Duo
 }

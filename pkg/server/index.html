@@ -359,7 +359,7 @@
 
     <div class="endpoint-box">
       <span>📡 API:</span>
-      <input type="text" id="apiInput" placeholder="http://129.153.157.17:3000">
+      <input type="text" id="apiInput" placeholder="https://ron-flexible-respective-caring.trycloudflare.com">
       <button class="btn" onclick="saveEndpoint()">Salvar</button>
     </div>
   </header>
@@ -409,7 +409,9 @@
     const BADGE_TEXT = document.getElementById('vpsBadgeText');
     const BADGE_PULSE = document.getElementById('vpsPulse');
 
-    const defaultApi = (window.location.hostname === 'localhost' || window.location.hostname === '129.153.157.17')
+    const isLocalDev = window.location.hostname === 'localhost' || window.location.hostname === '127.0.0.1';
+    const isSelfHosted = !isLocalDev && !/\.github\.io$/.test(window.location.hostname);
+    const defaultApi = (isLocalDev || isSelfHosted)
       ? window.location.origin
       : 'https://ron-flexible-respective-caring.trycloudflare.com';
 
@@ -640,14 +642,14 @@
             <!-- Bestiário -->
             <div class="bestiary-box">
               <div class="bestiary-header">
-                <span>🎯 Bestiário: ${esc(bestiary.currentMonster || 'Rat')}</span>
+                <span>🎯 Bestiário: ${esc(bestiary.currentMonster || 'Rat')}${bestiary.targetStage ? ` [Estágio ${(bestiary.stage || 0) + 1}/${bestiary.targetStage}]` : ''}</span>
                 <span class="badge badge-purple">⭐ +${bBonus}% XP</span>
               </div>
               <div class="progress-track" style="height: 8px;">
                 <div class="progress-fill fill-bestiary" style="width: ${bPct}%;"></div>
               </div>
               <div style="display: flex; justify-content: space-between; font-size: 0.72rem; color: #a78bfa;">
-                <span>Monstro: ${bKills} / ${bReq} (${bPct}%)</span>
+                <span>Progresso: ${bKills.toLocaleString('pt-BR')} / ${bReq.toLocaleString('pt-BR')} (${bPct}%)</span>
                 <span>🏆 ${bComp}/${bTotal} concluídos</span>
               </div>
               <div style="font-size: 0.72rem; color: #c4b5fd; text-align: right;">
