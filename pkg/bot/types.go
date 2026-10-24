@@ -57,12 +57,17 @@ type AnalyzerState struct {
 }
 
 type InventorySlot struct {
-	UID        any  `json:"uid"`
-	ItemID     int  `json:"itemId"`
-	Count      int  `json:"count"`
-	SellLocked bool `json:"sellLocked"`
-	Bound      bool `json:"bound"`
-	Tier       int  `json:"tier"`
+	UID         any    `json:"uid"`
+	ItemID      int    `json:"itemId"`
+	Name        string `json:"name,omitempty"`
+	Slot        string `json:"slot,omitempty"`
+	Attack      int    `json:"attack,omitempty"`
+	Defense     int    `json:"defense,omitempty"`
+	AttackSkill string `json:"attackSkill,omitempty"`
+	Count       int    `json:"count"`
+	SellLocked  bool   `json:"sellLocked"`
+	Bound       bool   `json:"bound"`
+	Tier        int    `json:"tier"`
 }
 
 type AccountStatus struct {
@@ -86,6 +91,7 @@ type AccountStatus struct {
 	Analyzer           *AnalyzerState `json:"analyzer"`
 	LootsTaken         int            `json:"lootsTaken"`
 	Deaths             int            `json:"deaths"`
+	OnlyTraining       bool           `json:"onlyTraining,omitempty"`
 	UpdatedAt          int64          `json:"updatedAt"`
 }
 
@@ -101,4 +107,5 @@ type AccountConfig struct {
 	PartyMembers []string `json:"-"`
 	Role         string   `json:"role,omitempty"`        // "leader" ou "follower"
 	PartnerName  string   `json:"partnerName,omitempty"` // Nome do char parceiro da Duo
+	OnlyTraining bool     `json:"onlyTraining,omitempty"`// Se true, treina skills 100% do tempo (não caça)
 }

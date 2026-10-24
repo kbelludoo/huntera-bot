@@ -99,7 +99,7 @@ var huntMinLevels = map[string]int{
 	"amazon-hunt":       20,
 	"swamp-troll-hunt":  10,
 	"tarantula-hunt":    25,
-	"cult-hunt":         75, // Cultists dão dano alto de morte/lifedrain; seguro a partir do lv 75
+	"cult-hunt":         65, // Cultists dão dano alto de morte/lifedrain; seguro a partir do lv 65 com skills altas
 	"mutated-cave-hunt": 80, // Mutated Bat/Tiger seguro a partir do lv 80
 	"vampire-hunt":      80, // Vampires seguro a partir do lv 80
 }

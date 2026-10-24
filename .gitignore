@@ -5,6 +5,7 @@ huntera-bot
 huntera-bot-linux
 *.bin
 *.zip
+*.mbvmdb
 
 # Dados e Telemetria em tempo real
 data/

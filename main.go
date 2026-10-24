@@ -69,6 +69,7 @@ func main() {
 		TargetStage   int    `json:"targetStage"`
 		Role          string `json:"role"`
 		PartnerName   string `json:"partnerName"`
+		OnlyTraining  bool   `json:"onlyTraining"`
 	}
 
 	var content []byte
@@ -101,16 +102,17 @@ func main() {
 			tStage = bot.DefaultTargetStage
 		}
 		activeConfigs = append(activeConfigs, bot.AccountConfig{
-			ID:          a.ID,
-			Email:       a.Email,
-			Password:    a.Password,
-			CharName:    charName,
-			HuntID:      a.HuntID,
-			Tier:        a.Tier,
-			AutoStamina: a.AutoStamina,
-			TargetStage: tStage,
-			Role:        a.Role,
-			PartnerName: a.PartnerName,
+			ID:           a.ID,
+			Email:        a.Email,
+			Password:     a.Password,
+			CharName:     charName,
+			HuntID:       a.HuntID,
+			Tier:         a.Tier,
+			AutoStamina:  a.AutoStamina,
+			TargetStage:  tStage,
+			Role:         a.Role,
+			PartnerName:  a.PartnerName,
+			OnlyTraining: a.OnlyTraining,
 		})
 	}
 
@@ -127,6 +129,7 @@ func main() {
 	for _, cfg := range activeConfigs {
 		b := bot.NewBot(cfg)
 		manager.bots = append(manager.bots, b)
+		bot.GlobalCoordinator.RegisterBot(b)
 		go b.Run(ctx)
 	}
 
@@ -177,7 +180,11 @@ func main() {
 					}
 
 					huntStr := "Aguardando"
-					if st.Hunt != nil {
+					if bot.GlobalCoordinator.IsTeamResting() {
+						huntStr = "🏋️ Treino Coletivo (Sincronia: Stamina Time < 5m)"
+					} else if st.OnlyTraining {
+						huntStr = "🏋️ Treino de Skills (Idle)"
+					} else if st.Hunt != nil {
 						huntStr = fmt.Sprintf("%s (tier %d)", st.Hunt.HuntID, st.Hunt.Tier)
 					} else if st.StaminaMs <= 60000 {
 						huntStr = "🏋️ Treino Idle (Skills Zero-Waste)"
