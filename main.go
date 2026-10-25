@@ -215,8 +215,12 @@ func main() {
 					}
 
 					fmt.Printf("[%s: \033[1m%s\033[0m (Lv. %d)] %s\n", st.ID, st.CharName, st.Level, statusBadge)
-					fmt.Printf("  💰 Ouro: \033[1;33m%s\033[0m (%d gp) │ XP: %d/%d │ Stamina: %s\n",
-						formatGp(st.Gold), st.Gold, st.Experience, st.ExperienceNeeded, formatStamina(st.StaminaMs))
+					vipStr := "Free"
+					if st.VipActive || st.VipDays > 0 {
+						vipStr = fmt.Sprintf("VIP (%d dias)", st.VipDays)
+					}
+					fmt.Printf("  💰 Ouro: \033[1;33m%s\033[0m │ 🪙 Coins: \033[1;33m%d\033[0m │ 👑 Conta: \033[1;32m%s\033[0m │ Stamina: %s\n",
+						formatGp(st.Gold), st.Coins, vipStr, formatStamina(st.StaminaMs))
 					fmt.Printf("  ⭐ Bestiário: \033[1;35m%s\033[0m%s [%d/%d] │ Bônus: \033[1;32m+%d%% XP\033[0m │ 100%%: %d/%d │ Kills: %d\n",
 						currMonst, stageStr, bKills, bReq, bonus, comp, totalMonst, charKills)
 					fmt.Printf("  🗡️ Hunt: \033[36m%s\033[0m │ Zero-Waste: 100%%\n", huntStr)

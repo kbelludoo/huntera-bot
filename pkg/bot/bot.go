@@ -143,6 +143,23 @@ func (b *Bot) getTargetHuntLocked() (int, string) {
 		}
 	}
 
+	// Se o modo VIP Farmer estiver ativo (Fase 1: 30 dias / Fase 2: 90 dias):
+	// O time foca 100% nas cavernas de maior lucro/exp para acelerar o acúmulo de coins e VIP,
+	// impedindo que o time regrida para monstros fracos de baixo ouro (Rat, Spider).
+	if b.IsVipFarmModeActive() {
+		teamLvl := lvl
+		if coordMin := GlobalCoordinator.GetTeamMinLevel(); coordMin > 0 && coordMin < 9000 {
+			teamLvl = coordMin
+		}
+		profitHunt, _ := GetBestProfitHunt(teamLvl)
+		for i, h := range HuntOrder {
+			if h == profitHunt {
+				return i, h
+			}
+		}
+		return 0, profitHunt
+	}
+
 	return FindFirstIncompleteHunt(stages, kills, tStage, req, lvl)
 }
 
@@ -491,8 +508,8 @@ func (b *Bot) runSession(ctx context.Context) error {
 
 							req := GetRequiredKillsForStage(stage, baseReq)
 							// Regra Zero-Gasto: Só tenta desbloquear se stage < tStage. Se stage >= 1 (custo de 30k+ gp),
-							// só tenta se o char tiver bastante ouro livre (>= 50k gp):
-							if k >= req && stage < tStage && (stage == 0 || gold >= 50000) {
+							// só tenta se o char tiver bastante ouro livre (>= 50k gp). Estágio 0 exige no mínimo 25k gp:
+							if k >= req && stage < tStage && gold >= 25000 && (stage == 0 || gold >= 50000) {
 								now := time.Now()
 								if now.Sub(b.lastBestiaryUnlock) > 15*time.Second {
 									b.lastBestiaryUnlock = now
@@ -567,6 +584,38 @@ func (b *Bot) runSession(ctx context.Context) error {
 		}
 	}()
 
+	// VIP & Market Monitor: Líder atualiza saldo de coins e consulta mercado periodicamente
+	go func() {
+		ticker := time.NewTicker(3 * time.Minute)
+		defer ticker.Stop()
+		for {
+			select {
+			case <-ctx.Done():
+				return
+			case <-disconnectChan:
+				return
+			case <-ticker.C:
+				b.mu.RLock()
+				inGame := b.status.InGame
+				role := b.config.Role
+				b.mu.RUnlock()
+
+				if inGame {
+					_ = sock.CoinsRefresh()
+					if role == "leader" {
+						_ = sock.StoreOpen()
+						time.Sleep(200 * time.Millisecond)
+						_ = sock.MarketOpen()
+						time.Sleep(200 * time.Millisecond)
+						_ = sock.MarketBrowse("coins")
+						time.Sleep(200 * time.Millisecond)
+						_ = sock.MarketClose()
+					}
+				}
+			}
+		}
+	}()
+
 	select {
 	case <-ctx.Done():
 		sock.Close()
@@ -578,10 +627,15 @@ func (b *Bot) runSession(ctx context.Context) error {
 
 func (b *Bot) setupSocketHandlers(sock *client.SocketClient) {
 	b.setupPartyFeatures(sock)
+	b.setupVipFarmer(sock)
 
 	sock.On("connected", func(_ protocol.RawEvent) {
 		time.Sleep(1 * time.Second)
 		_ = sock.RequestCyclopedia()
+		_ = sock.CoinsRefresh()
+		if b.config.Role == "leader" {
+			_ = sock.StoreOpen()
+		}
 
 		// 🛡️ Garante blessings ao conectar (grátis até o nível limite ou compradas)
 		_ = sock.BlessingsOpen()
@@ -1481,6 +1535,31 @@ func (b *Bot) advanceToNextHunt(sock *client.SocketClient) {
 	if b.config.Role == "follower" || b.config.OnlyTraining {
 		return
 	}
+
+	if b.IsVipFarmModeActive() {
+		teamLvl := b.status.Level
+		if coordMin := GlobalCoordinator.GetTeamMinLevel(); coordMin > 0 && coordMin < 9000 {
+			teamLvl = coordMin
+		}
+		profitHunt, name := GetBestProfitHunt(teamLvl)
+		log.Printf("[%s] 💰 [VIP FARMER] Caçada atual concluída! Mantendo equipe focada no farm de Ouro/VIP: %s (%s)", b.config.ID, profitHunt, name)
+		for i, h := range HuntOrder {
+			if h == profitHunt {
+				b.currentHuntIndex = i
+				break
+			}
+		}
+		b.mu.RLock()
+		inHunt := b.status.Hunt != nil
+		b.mu.RUnlock()
+		if inHunt {
+			_ = sock.ChangeHunt(profitHunt, b.config.Tier)
+		} else {
+			_ = sock.StartHunt(profitHunt, b.config.Tier)
+		}
+		return
+	}
+
 	tStage := b.config.TargetStage
 	if tStage <= 0 {
 		tStage = DefaultTargetStage

@@ -78,6 +78,40 @@ func (c *TeamCoordinator) SetTeamResting(resting bool, reason string) {
 	c.restReason = reason
 }
 
+// GetTeamMinLevel returns the lowest level among all active team members
+func (c *TeamCoordinator) GetTeamMinLevel() int {
+	c.mu.RLock()
+	defer c.mu.RUnlock()
+
+	minLvl := 9999
+	for _, b := range c.bots {
+		st := b.GetStatus()
+		if st.InGame && st.Level > 0 {
+			if st.Level < minLvl {
+				minLvl = st.Level
+			}
+		}
+	}
+	if minLvl == 9999 {
+		return 1
+	}
+	return minLvl
+}
+
+// GetTeamTotalGold returns the sum of gold across all team members
+func (c *TeamCoordinator) GetTeamTotalGold() int {
+	c.mu.RLock()
+	defer c.mu.RUnlock()
+
+	total := 0
+	for _, b := range c.bots {
+		st := b.GetStatus()
+		total += st.Gold
+	}
+	return total
+}
+
+
 // ForceTeamRest forces all accounts in the team to leave hunt and enter idle training.
 func (c *TeamCoordinator) ForceTeamRest(reason string) {
 	c.mu.Lock()

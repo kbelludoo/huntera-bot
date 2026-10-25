@@ -94,3 +94,34 @@ func (s *SocketClient) SetAmmoRules(rules any) error {
 func (s *SocketClient) SelectAmmo(itemID int) error {
 	return s.Send("select-ammo", map[string]any{"itemId": itemID})
 }
+
+func (s *SocketClient) StoreOpen() error {
+	return s.Send("store-open", map[string]any{})
+}
+
+func (s *SocketClient) StoreBuy(offerID any) error {
+	return s.Send("store-buy", map[string]any{
+		"offerId": offerID,
+		"id":      offerID,
+	})
+}
+
+func (s *SocketClient) StoreHistoryRequest() error {
+	return s.Send("store-history-request", map[string]any{})
+}
+
+func (s *SocketClient) CoinsRefresh() error {
+	return s.Send("coins-refresh", map[string]any{})
+}
+
+func (s *SocketClient) MarketBrowse(category string) error {
+	return s.Send("market-browse", map[string]any{"category": category})
+}
+
+func (s *SocketClient) MarketAcceptOffer(offerID any, amount int) error {
+	return s.Send("market-accept-offer", map[string]any{
+		"offerId": offerID,
+		"amount":  amount,
+	})
+}
+

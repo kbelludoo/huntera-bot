@@ -82,6 +82,9 @@ type AccountStatus struct {
 	Mana               int            `json:"mana"`
 	MaxMana            int            `json:"maxMana"`
 	Gold               int            `json:"gold"`
+	Coins              int            `json:"coins"`
+	VipDays            int            `json:"vipDays"`
+	VipActive          bool           `json:"vipActive"`
 	Hunt               *HuntState     `json:"hunt,omitempty"`
 	StaminaMs          int64          `json:"staminaMs"`
 	SessionRemainingMs int64          `json:"sessionRemainingMs"`
@@ -108,4 +111,5 @@ type AccountConfig struct {
 	Role         string   `json:"role,omitempty"`        // "leader" ou "follower"
 	PartnerName  string   `json:"partnerName,omitempty"` // Nome do char parceiro da Duo
 	OnlyTraining bool     `json:"onlyTraining,omitempty"`// Se true, treina skills 100% do tempo (não caça)
+	FarmVIPMode  *bool    `json:"farmVipMode,omitempty"` // Se true (padrão), prioriza farm de ouro e compra de VIPs antes do bestiário
 }
