@@ -125,3 +125,51 @@ func (s *SocketClient) MarketAcceptOffer(offerID any, amount int) error {
 	})
 }
 
+func (s *SocketClient) CoinTransfer(recipient string, amount int) error {
+	return s.Send("coin-transfer", map[string]any{
+		"recipient":     recipient,
+		"characterName": recipient,
+		"name":          recipient,
+		"target":        recipient,
+		"amount":        amount,
+	})
+}
+
+func (s *SocketClient) TradeRequest(targetName string) error {
+	return s.Send("trade-request", map[string]any{
+		"characterName": targetName,
+		"name":          targetName,
+		"target":        targetName,
+	})
+}
+
+func (s *SocketClient) TradeRespond(accept bool) error {
+	return s.Send("trade-respond", map[string]any{
+		"accept": accept,
+	})
+}
+
+func (s *SocketClient) TradeSetGold(amount int) error {
+	return s.Send("trade-set-gold", map[string]any{
+		"amount": amount,
+		"gold":   amount,
+	})
+}
+
+func (s *SocketClient) TradeReady(ready bool) error {
+	return s.Send("trade-ready", map[string]any{
+		"ready": ready,
+	})
+}
+
+func (s *SocketClient) TradeConfirm(confirm bool) error {
+	return s.Send("trade-confirm", map[string]any{
+		"confirm": confirm,
+	})
+}
+
+func (s *SocketClient) TradeCancel() error {
+	return s.Send("trade-cancel", map[string]any{})
+}
+
+

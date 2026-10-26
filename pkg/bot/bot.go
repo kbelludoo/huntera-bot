@@ -34,6 +34,9 @@ type Bot struct {
 	lastFollowAttempt       time.Time
 	lastPaladinEquipAttempt time.Time
 	lastStaminaCheck        time.Time
+	tradeInProgress         bool
+	tradePartner            string
+	lastTradeAttempt        time.Time
 	npcPrices               map[int]int
 	auctionPrices           map[int]int
 }
@@ -602,6 +605,7 @@ func (b *Bot) runSession(ctx context.Context) error {
 
 				if inGame {
 					_ = sock.CoinsRefresh()
+					b.checkAndInitiateGoldPool(sock)
 					if role == "leader" {
 						_ = sock.StoreOpen()
 						time.Sleep(200 * time.Millisecond)
@@ -628,6 +632,7 @@ func (b *Bot) runSession(ctx context.Context) error {
 func (b *Bot) setupSocketHandlers(sock *client.SocketClient) {
 	b.setupPartyFeatures(sock)
 	b.setupVipFarmer(sock)
+	b.setupGoldPool(sock)
 
 	sock.On("connected", func(_ protocol.RawEvent) {
 		time.Sleep(1 * time.Second)

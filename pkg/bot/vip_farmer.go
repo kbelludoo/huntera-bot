@@ -110,8 +110,9 @@ func (b *Bot) handleCoins(sock *client.SocketClient, ev protocol.RawEvent) {
 		log.Printf("[%s: %s] 🪙 [COINS] Saldo atualizado: %d coins (Anterior: %d)", b.config.ID, b.status.CharName, total, oldCoins)
 	}
 
-	// Gatilho autônomo de compra de VIP para o líder da equipe
-	if b.config.Role == "leader" {
+	// Gatilho autônomo de compra de VIP para o beneficiário atual da party
+	_, vipAccID := GlobalCoordinator.GetVipTarget()
+	if b.config.ID == vipAccID || (b.config.Role == "leader" && vipDays <= 0) {
 		if vipDays <= 0 && total >= 250 {
 			// FASE 1: Destravar a primeira VIP de 30 dias
 			b.buyVipTier(sock, 30, 250, "premium-30")
@@ -179,7 +180,8 @@ func (b *Bot) handleStoreOffers(sock *client.SocketClient, ev protocol.RawEvent)
 	role := b.config.Role
 	b.mu.RUnlock()
 
-	if role != "leader" {
+	_, vipAccID := GlobalCoordinator.GetVipTarget()
+	if b.config.ID != vipAccID && role != "leader" {
 		return
 	}
 

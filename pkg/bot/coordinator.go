@@ -3,6 +3,7 @@ package bot
 import (
 	"fmt"
 	"log"
+	"strings"
 	"sync"
 	"time"
 )
@@ -110,6 +111,66 @@ func (c *TeamCoordinator) GetTeamTotalGold() int {
 	}
 	return total
 }
+
+// GetVipTarget returns the character name and account ID that should receive pooled gold/coins next.
+// Prioridade 1ª VIP (30 dias): Líder (acc3) -> Paladino (acc1) -> Sorcerer (acc4) -> Druid (acc2).
+// Prioridade 2ª VIP (90 dias): Líder (acc3) -> Paladino (acc1) -> Sorcerer (acc4) -> Druid (acc2).
+func (c *TeamCoordinator) GetVipTarget() (charName string, accountID string) {
+	c.mu.RLock()
+	defer c.mu.RUnlock()
+
+	priorityIDs := []string{"acc3", "acc1", "acc4", "acc2"}
+
+	// Fase 1: Encontra a primeira conta sem VIP ativo (0 dias)
+	for _, id := range priorityIDs {
+		for _, b := range c.bots {
+			if b.config.ID == id {
+				st := b.GetStatus()
+				if st.VipDays <= 0 && !st.VipActive {
+					return st.CharName, id
+				}
+			}
+		}
+	}
+
+	// Fase 2: Encontra a primeira conta com menos de 90 dias de VIP
+	for _, id := range priorityIDs {
+		for _, b := range c.bots {
+			if b.config.ID == id {
+				st := b.GetStatus()
+				if st.VipDays < 90 {
+					return st.CharName, id
+				}
+			}
+		}
+	}
+
+	// Padrão: Líder (acc3)
+	for _, b := range c.bots {
+		if b.config.ID == "acc3" {
+			return b.GetStatus().CharName, "acc3"
+		}
+	}
+	if len(c.bots) > 0 {
+		return c.bots[0].GetStatus().CharName, c.bots[0].config.ID
+	}
+	return "", ""
+}
+
+// IsTeamMember returns true if the character name belongs to one of our accounts
+func (c *TeamCoordinator) IsTeamMember(charName string) bool {
+	c.mu.RLock()
+	defer c.mu.RUnlock()
+
+	for _, b := range c.bots {
+		st := b.GetStatus()
+		if strings.EqualFold(st.CharName, charName) {
+			return true
+		}
+	}
+	return false
+}
+
 
 
 // ForceTeamRest forces all accounts in the team to leave hunt and enter idle training.
