@@ -42,14 +42,21 @@ func (b *Bot) setupPaladinAmmoRules(sock *client.SocketClient) {
 func (b *Bot) handlePaladinCitySupplies(sock *client.SocketClient) {
 	b.setupPaladinAmmoRules(sock)
 
-	log.Printf("[%s: %s] 🏹 [PALADINO] Na cidade: garantindo suprimentos de armas de distância (spears / paladin's bow)…",
+	// Se já verificou suprimentos recentemente (nos últimos 10 minutos), evita chamadas redundantes
+	now := time.Now()
+	b.mu.Lock()
+	if now.Sub(b.lastPaladinEquipAttempt) < 10*time.Minute {
+		b.mu.Unlock()
+		return
+	}
+	b.lastPaladinEquipAttempt = now
+	b.mu.Unlock()
+
+	log.Printf("[%s: %s] 🏹 [PALADINO] Na cidade: verificando suprimentos de armas de distância (spears)…",
 		b.config.ID, b.status.CharName)
 	_ = sock.ShopOpen()
 	time.Sleep(200 * time.Millisecond)
-	_ = sock.ShopBuy(3277, 10) // 10x Spear (10 gp cada - lança com Atk 9 nativo, sem necessidade de flechas)
-	_ = sock.ShopBuy(21427, 1) // 1x Paladin's Bow (0 gp)
-	_ = sock.Send("tutorial-weapon", map[string]any{"weapon": "spear"})
-	_ = sock.Send("tutorial-weapon", map[string]any{"weapon": "bow"})
+	_ = sock.ShopBuy(3277, 5) // 5x Spear
 }
 
 // handlePaladinEquip prioritizes distance weapons (spear, bow) for the paladin over melee swords/wands
