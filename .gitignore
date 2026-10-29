@@ -1,26 +1,7 @@
-# Binários compilados
-*.exe
-*-linux
-huntera-bot
-huntera-bot-linux
-*.bin
-*.zip
-*.mbvmdb
-
-# Dados e Telemetria em tempo real
-data/
-*.log
-dump-*.json
-
-# SEGURANÇA CRÍTICA: Senhas e credenciais reais nunca vão para o Git
+/target/
 accounts.json
-session.json
-config.json
-.secrets.json
-.env
-
-# Arquivos de sistema e chaves
+*.exe
+*.log
 *.key
 *.pem
-.DS_Store
-Thumbs.db
+.secrets.json
